@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Poster dan Brosur Hidup</title>
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #000;
+                 font-family: system-ui, sans-serif; }
+    #ar { position: fixed; inset: 0; touch-action: none; }
+
+    #status { position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+              padding: 8px 16px; border-radius: 999px; background: rgba(0,0,0,.65);
+              color: #fff; font-size: 14px; pointer-events: none; z-index: 10;
+              max-width: 90vw; text-align: center; }
+    #status.found { background: rgba(22,128,60,.85); }
+    #status.error { background: rgba(180,30,30,.9); }
+
+    #panel { position: fixed; left: 12px; right: 12px; bottom: 16px; padding: 14px 16px;
+             border-radius: 14px; background: rgba(255,255,255,.95); color: #111;
+             z-index: 10; display: none; max-width: 480px; margin: 0 auto; }
+    #panel.show { display: block; }
+    #panel h2 { margin: 0 0 6px; font-size: 18px; }
+    #panel p { margin: 0 0 10px; font-size: 14px; line-height: 1.4; }
+    #panel a { display: inline-block; padding: 10px 16px; border-radius: 10px;
+               background: #1d4ed8; color: #fff; text-decoration: none; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div id="ar"></div>
+  <div id="status">Memuat…</div>
+  <div id="panel">
+    <h2 id="panel-judul"></h2>
+    <p id="panel-isi"></p>
+    <a id="panel-link" target="_blank" rel="noopener">Buka tautan</a>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.175.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.175.0/examples/jsm/",
+      "mindar-image-three": "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { MindARThree } from 'mindar-image-three';
+
+    const $ = (id) => document.getElementById(id);
+    const statusEl = $('status');
+    const panel = $('panel');
+
+    const MSG_CARI = 'Arahkan kamera ke gambar target…';
+
+    function setStatus(text, kind = '') {
+      statusEl.textContent = text;
+      statusEl.className = kind;
+    }
+
+    function showPanel(t) {
+      $('panel-judul').textContent = t.judul;
+      $('panel-isi').textContent = t.deskripsi;
+      const a = $('panel-link');
+      if (t.tautan) { a.href = t.tautan; a.style.display = 'inline-block'; }
+      else { a.style.display = 'none'; }
+      panel.classList.add('show');
+    }
+    const hidePanel = () => panel.classList.remove('show');
+
+    function validasi(data) {
+      if (!data || !Array.isArray(data.targets) || data.targets.length === 0)
+        throw new Error('targets.json kosong atau formatnya salah');
+      for (const t of data.targets) {
+        for (const k of ['index', 'judul', 'deskripsi', 'model'])
+          if (t[k] === undefined) throw new Error(`Field "${k}" hilang pada salah satu target`);
+      }
+    }
+
+    function cariKlip(clips, nama) {
+      return clips.find((c) => c.name === nama) || null;
+    }
+
+    async function main() {
+      // 1) Muat data
+      let data;
+      try {
+        const res = await fetch('data/targets.json');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        data = await res.json();
+        validasi(data);
+      } catch (e) {
+        setStatus('Gagal memuat data: ' + e.message, 'error');
+        return;
+      }
+
+      // 2) Siapkan MindAR
+      const mindar = new MindARThree({
+        container: $('ar'),
+        imageTargetSrc: 'assets/targets/targets.mind',
+        uiLoading: 'no', uiScanning: 'no', uiError: 'no'
+      });
+      const { renderer, scene, camera } = mindar;
+      scene.add(new THREE.HemisphereLight(0xffffff, 0x666666, 2.5));
+
+      const loader = new GLTFLoader();
+      const entries = [];
+      let active = null;
+
+      // 3) Anchor + model untuk tiap target
+      setStatus('Memuat model 3D…');
+      for (const t of data.targets) {
+        const anchor = mindar.addAnchor(t.index);
+        let gltf;
+        try {
+          gltf = await loader.loadAsync(t.model);
+        } catch (e) {
+          setStatus('Model gagal dimuat: ' + t.model, 'error');
+          return;
+        }
+
+        const holder = new THREE.Group();
+        const model = gltf.scene;
+        model.scale.setScalar(t.skala ?? 0.2);
+        model.position.set(...(t.posisi ?? [0, 0, 0.1]));
+        model.rotation.set(...(t.rotasi ?? [0, 0, 0]));
+        holder.add(model);
+        anchor.group.add(holder);
+
+        const mixer = new THREE.AnimationMixer(model);
+        const idleClip = cariKlip(gltf.animations, t.klipIdle) || gltf.animations[0] || null;
+        const aksiClip = cariKlip(gltf.animations, t.klipAksi);
+        const en = {
+          t, holder, model, mixer,
+          idle: idleClip ? mixer.clipAction(idleClip) : null,
+          aksi: aksiClip ? mixer.clipAction(aksiClip) : null,
+          busy: false, spinLeft: 0
+        };
+        en.idle?.play();
+
+        anchor.onTargetFound = () => {
+          active = en;
+          setStatus('Target ditemukan: ' + t.judul, 'found');
+          showPanel(t);
+        };
+        anchor.onTargetLost = () => {
+          if (active === en) active = null;
+          setStatus(MSG_CARI);
+          hidePanel();
+        };
+        entries.push(en);
+      }
+
+      // 4) Jalankan kamera (tangani izin ditolak)
+      try {
+        await mindar.start();
+      } catch (e) {
+        const denied = e && (e.name === 'NotAllowedError' || /permission|denied/i.test(String(e)));
+        setStatus(
+          denied
+            ? 'Izin kamera ditolak. Aktifkan izin kamera di pengaturan browser lalu muat ulang halaman.'
+            : 'Kamera gagal dimulai: ' + (e.message || e),
+          'error'
+        );
+        return;
+      }
+      setStatus(MSG_CARI);
+
+      // 5) Interaksi: ketuk = animasi aksi, cubit = zoom
+      const dom = renderer.domElement;
+      dom.style.touchAction = 'none';
+      const raycaster = new THREE.Raycaster();
+      const ndc = new THREE.Vector2();
+      const pointers = new Map();
+      let tapStart = null, pinchStart = 0, scaleStart = 1;
+
+      const jarak = () => {
+        const [a, b] = [...pointers.values()];
+        return Math.hypot(a.x - b.x, a.y - b.y);
+      };
+
+      function mainkanAksi(en) {
+        if (en.busy) return;
+        en.busy = true;
+        if (en.aksi) {
+          en.idle?.fadeOut(0.2);
+          en.aksi.reset().setLoop(THREE.LoopOnce, 1);
+          en.aksi.clampWhenFinished = true;
+          en.aksi.fadeIn(0.2).play();
+          const selesai = (ev) => {
+            if (ev.action !== en.aksi) return;
+            en.mixer.removeEventListener('finished', selesai);
+            en.aksi.fadeOut(0.2);
+            en.idle?.reset().fadeIn(0.2).play();
+            en.busy = false;
+          };
+          en.mixer.addEventListener('finished', selesai);
+        } else {
+          en.spinLeft = Math.PI * 2;
+        }
+      }
+
+      function handleTap(e) {
+        if (!active) return;
+        const r = dom.getBoundingClientRect();
+        ndc.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+        ndc.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+        raycaster.setFromCamera(ndc, camera);
+        if (raycaster.intersectObject(active.holder, true).length > 0) mainkanAksi(active);
+      }
+
+      dom.addEventListener('pointerdown', (e) => {
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (pointers.size === 1) {
+          tapStart = { x: e.clientX, y: e.clientY, t: performance.now() };
+        } else {
+          tapStart = null;
+          if (pointers.size === 2 && active) {
+            pinchStart = jarak();
+            scaleStart = active.holder.scale.x;
+          }
+        }
+      });
+
+      dom.addEventListener('pointermove', (e) => {
+        if (!pointers.has(e.pointerId)) return;
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (pointers.size === 2 && active && pinchStart > 0) {
+          const s = THREE.MathUtils.clamp(scaleStart * (jarak() / pinchStart), 0.5, 3);
+          active.holder.scale.setScalar(s);
+        }
+      });
+
+      const akhir = (e) => {
+        if (e.type === 'pointerup' && pointers.size === 1 && tapStart) {
+          const geser = Math.hypot(e.clientX - tapStart.x, e.clientY - tapStart.y);
+          if (geser < 10 && performance.now() - tapStart.t < 400) handleTap(e);
+        }
+        pointers.delete(e.pointerId);
+        if (pointers.size < 2) pinchStart = 0;
+      };
+      dom.addEventListener('pointerup', akhir);
+      dom.addEventListener('pointercancel', akhir);
+
+      // 6) Render loop
+      const clock = new THREE.Clock();
+      renderer.setAnimationLoop(() => {
+        const dt = clock.getDelta();
+        for (const en of entries) {
+          en.mixer.update(dt);
+          if (en.spinLeft > 0) {
+            const step = Math.min(en.spinLeft, dt * 6);
+            en.model.rotation.y += step;
+            en.spinLeft -= step;
+            if (en.spinLeft <= 0) en.busy = false;
+          }
+        }
+        renderer.render(scene, camera);
+      });
+    }
+
+    main();
+  </script>
+</body>
+</html>

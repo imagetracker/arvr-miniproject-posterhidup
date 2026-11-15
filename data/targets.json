@@ -1,0 +1,30 @@
+{
+  "targets": [
+    {
+      "index": 0,
+      "id": "kampus-cup",
+      "judul": "Kampus Cup: Turnamen Futsal 2026",
+      "deskripsi": "Poster turnamen futsal antarprodi (contoh fiktif). Ketuk bola untuk melihat animasinya, cubit untuk memperbesar.",
+      "tautan": "",
+      "model": "assets/models/bola.glb",
+      "skala": 0.6,
+      "posisi": [0, 0, 0.3],
+      "rotasi": [0, 0, 0],
+      "klipIdle": "Idle",
+      "klipAksi": "Aksi"
+    },
+    {
+      "index": 1,
+      "id": "elang-biru-fc",
+      "judul": "Elang Biru FC",
+      "deskripsi": "Profil tim fiktif untuk contoh prototipe. Ketuk trofi untuk melihat animasinya.",
+      "tautan": "",
+      "model": "assets/models/tropi.glb",
+      "skala": 0.5,
+      "posisi": [0, 0, 0.2],
+      "rotasi": [0, 0, 0],
+      "klipIdle": "Idle",
+      "klipAksi": "Aksi"
+    }
+  ]
+}
