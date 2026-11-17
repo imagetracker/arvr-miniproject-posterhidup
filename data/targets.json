@@ -1,30 +1,30 @@
+
 {
   "targets": [
     {
       "index": 0,
-      "id": "kampus-cup",
-      "judul": "Kampus Cup: Turnamen Futsal 2026",
-      "deskripsi": "Poster turnamen futsal antarprodi (contoh fiktif). Ketuk bola untuk melihat animasinya, cubit untuk memperbesar.",
+      "id": "solar-system",
+      "judul": "Tata Surya",
+      "deskripsi": "Visualisasi tata surya dalam bentuk 3D. Ketuk model untuk memulai animasi pergerakan planet.",
       "tautan": "",
-      "model": "assets/models/bola.glb",
-      "skala": 0.6,
+      "model": "assets/models/solar_system_with_animation.glb",
+      "skala": 0.3,
       "posisi": [0, 0, 0.3],
       "rotasi": [0, 0, 0],
-      "klipIdle": "Idle",
-      "klipAksi": "Aksi"
+      "klipAksi": "Take 001",
+      "ulangSaatDiklik": true
     },
     {
-      "index": 1,
-      "id": "elang-biru-fc",
-      "judul": "Elang Biru FC",
-      "deskripsi": "Profil tim fiktif untuk contoh prototipe. Ketuk trofi untuk melihat animasinya.",
-      "tautan": "",
-      "model": "assets/models/tropi.glb",
-      "skala": 0.5,
-      "posisi": [0, 0, 0.2],
-      "rotasi": [0, 0, 0],
-      "klipIdle": "Idle",
-      "klipAksi": "Aksi"
+       "index": 1,
+       "id": "save-orangutan",
+       "judul": "Save Orangutan – Let Them Breathe",
+       "deskripsi": "Lindungi orang utan dan habitatnya dari ancaman kebakaran hutan.",
+       "tautan": "",
+       "model": "assets/models/orang_utan_low_poly.glb",
+       "skala": 0.005,
+       "posisi": [0, 0, 0.3],
+       "rotasi": [0, 0, 0],
+       "klipAksi": "Animation"
     }
   ]
 }

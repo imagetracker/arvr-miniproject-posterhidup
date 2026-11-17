@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0f172a">
   <title>Poster dan Brosur Hidup</title>
+
   <style>
     :root {
       --glass: rgba(15, 23, 42, .74);
@@ -17,102 +18,345 @@
       --safe-t: env(safe-area-inset-top, 0px);
       --safe-b: env(safe-area-inset-bottom, 0px);
     }
+
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
-    html, body { margin: 0; height: 100%; overflow: hidden; background: #000;
-                 font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-                 -webkit-tap-highlight-color: transparent; }
-    #ar { position: fixed; inset: 0; touch-action: none; }
 
-    /* ===== HUD atas ===== */
-    #hud { position: fixed; top: calc(10px + var(--safe-t)); left: 12px; right: 12px; z-index: 10;
-           display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
-           pointer-events: none; }
-    .chip { background: var(--glass); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-            border: 1px solid var(--line); color: var(--txt); border-radius: 999px;
-            padding: 9px 14px; font-size: 13px; font-weight: 600;
-            display: flex; align-items: center; gap: 8px; }
-    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--warn);
-           animation: pulse 1.2s ease-in-out infinite; }
-    .chip.found .dot { background: var(--ok); animation: none; box-shadow: 0 0 0 4px rgba(34,197,94,.25); }
-    @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .4; transform: scale(.7); } }
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-    /* ===== Bingkai pemindaian ===== */
-    #reticle { position: fixed; left: 50%; top: 46%; width: min(72vw, 320px); aspect-ratio: 3 / 4;
-               transform: translate(-50%, -50%); z-index: 5; pointer-events: none; transition: opacity .3s; }
+    #ar {
+      position: fixed;
+      inset: 0;
+      touch-action: none;
+    }
+
+    #hud {
+      position: fixed;
+      top: calc(10px + var(--safe-t));
+      left: 12px;
+      right: 12px;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .chip {
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--line);
+      color: var(--txt);
+      border-radius: 999px;
+      padding: 9px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--warn);
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    .chip.found .dot {
+      background: var(--ok);
+      animation: none;
+      box-shadow: 0 0 0 4px rgba(34,197,94,.25);
+    }
+
+    @keyframes pulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .4; transform: scale(.7); }
+    }
+
+    #reticle {
+      position: fixed;
+      left: 50%;
+      top: 46%;
+      width: min(72vw, 320px);
+      aspect-ratio: 3 / 4;
+      transform: translate(-50%, -50%);
+      z-index: 5;
+      pointer-events: none;
+      transition: opacity .3s;
+    }
+
     #reticle.hide { opacity: 0; }
-    #reticle i { position: absolute; width: 36px; height: 36px; border: 4px solid #fff; opacity: .92; }
-    #reticle .tl { top: 0; left: 0; border-right: 0; border-bottom: 0; border-top-left-radius: 16px; }
-    #reticle .tr { top: 0; right: 0; border-left: 0; border-bottom: 0; border-top-right-radius: 16px; }
-    #reticle .bl { bottom: 0; left: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 16px; }
-    #reticle .br { bottom: 0; right: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 16px; }
-    #reticle .scan { position: absolute; left: 6%; right: 6%; height: 3px; border-radius: 3px;
-                     background: linear-gradient(90deg, transparent, var(--brand), transparent);
-                     animation: scan 2.2s ease-in-out infinite; }
-    @keyframes scan { 0%,100% { top: 6%; } 50% { top: 94%; } }
-    #reticle .rhint { position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
-                      margin-top: 16px; width: 120%; text-align: center; color: #fff;
-                      font-size: 14px; font-weight: 600; text-shadow: 0 1px 6px rgba(0,0,0,.8); }
 
-    /* ===== Panel info (bottom sheet) ===== */
-    #sheet { position: fixed; left: 12px; right: 12px; bottom: calc(14px + var(--safe-b));
-             max-width: 520px; margin: 0 auto; z-index: 10; padding: 16px; color: var(--txt);
-             background: var(--glass); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
-             border: 1px solid var(--line); border-radius: 22px;
-             transform: translateY(130%); opacity: 0; pointer-events: none;
-             transition: transform .35s cubic-bezier(.2,.9,.3,1), opacity .25s; }
-    #sheet.show { transform: none; opacity: 1; pointer-events: auto; }
-    #sheet .tag { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .04em;
-                  text-transform: uppercase; color: #bfdbfe; background: rgba(59,130,246,.25);
-                  padding: 4px 10px; border-radius: 999px; }
-    #sheet h2 { margin: 10px 0 6px; font-size: 20px; line-height: 1.25; }
-    #sheet p { margin: 0 0 12px; font-size: 14px; line-height: 1.5; color: var(--muted); }
-    #sheet .hints { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
-    #sheet .hints span { font-size: 13px; color: var(--txt); background: rgba(255,255,255,.1);
-                         padding: 7px 12px; border-radius: 999px; }
-    #sheet .actions { display: flex; gap: 10px; }
-    #sheet .actions > * { flex: 1; min-height: 48px; display: flex; align-items: center; justify-content: center;
-                          border-radius: 14px; font-size: 15px; font-weight: 700; text-decoration: none;
-                          border: 1px solid var(--line); background: rgba(255,255,255,.1); color: var(--txt);
-                          cursor: pointer; font-family: inherit; }
-    #sheet .actions .primary { background: var(--brand); border-color: transparent; color: #fff; }
-    #sheet .actions > *:active { transform: scale(.97); }
+    #reticle i {
+      position: absolute;
+      width: 36px;
+      height: 36px;
+      border: 4px solid #fff;
+      opacity: .92;
+    }
 
-    /* ===== Layar muat / error ===== */
-    #overlay { position: fixed; inset: 0; z-index: 30; display: none; align-items: center; justify-content: center;
-               padding: 24px; background: radial-gradient(circle at 50% 30%, #1e3a8a 0%, #0f172a 70%); }
+    #reticle .tl {
+      top: 0;
+      left: 0;
+      border-right: 0;
+      border-bottom: 0;
+      border-top-left-radius: 16px;
+    }
+
+    #reticle .tr {
+      top: 0;
+      right: 0;
+      border-left: 0;
+      border-bottom: 0;
+      border-top-right-radius: 16px;
+    }
+
+    #reticle .bl {
+      bottom: 0;
+      left: 0;
+      border-right: 0;
+      border-top: 0;
+      border-bottom-left-radius: 16px;
+    }
+
+    #reticle .br {
+      bottom: 0;
+      right: 0;
+      border-left: 0;
+      border-top: 0;
+      border-bottom-right-radius: 16px;
+    }
+
+    #reticle .scan {
+      position: absolute;
+      left: 6%;
+      right: 6%;
+      height: 3px;
+      border-radius: 3px;
+      background: linear-gradient(90deg, transparent, var(--brand), transparent);
+      animation: scan 2.2s ease-in-out infinite;
+    }
+
+    @keyframes scan {
+      0%,100% { top: 6%; }
+      50% { top: 94%; }
+    }
+
+    #reticle .rhint {
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      margin-top: 16px;
+      width: 120%;
+      text-align: center;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      text-shadow: 0 1px 6px rgba(0,0,0,.8);
+    }
+
+    #sheet {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: calc(14px + var(--safe-b));
+      max-width: 520px;
+      margin: 0 auto;
+      z-index: 10;
+      padding: 16px;
+      color: var(--txt);
+      background: var(--glass);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      transform: translateY(130%);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform .35s cubic-bezier(.2,.9,.3,1), opacity .25s;
+    }
+
+    #sheet.show {
+      transform: none;
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #sheet .tag {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: #bfdbfe;
+      background: rgba(59,130,246,.25);
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+
+    #sheet h2 {
+      margin: 10px 0 6px;
+      font-size: 20px;
+      line-height: 1.25;
+    }
+
+    #sheet p {
+      margin: 0 0 12px;
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+
+    #sheet .hints {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    #sheet .hints span {
+      font-size: 13px;
+      color: var(--txt);
+      background: rgba(255,255,255,.1);
+      padding: 7px 12px;
+      border-radius: 999px;
+    }
+
+    #sheet .actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    #sheet .actions > * {
+      flex: 1;
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      text-decoration: none;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.1);
+      color: var(--txt);
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    #sheet .actions .primary {
+      background: var(--brand);
+      border-color: transparent;
+      color: #fff;
+    }
+
+    #sheet .actions > *:active {
+      transform: scale(.97);
+    }
+
+    #overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: radial-gradient(circle at 50% 30%, #1e3a8a 0%, #0f172a 70%);
+    }
+
     #overlay.show { display: flex; }
-    .ov-card { width: min(92vw, 360px); text-align: center; color: var(--txt); }
-    .ov-title { font-size: 22px; font-weight: 800; margin: 18px 0 6px; }
-    #ov-text { margin: 0 0 18px; font-size: 15px; line-height: 1.5; color: var(--muted); }
-    .spinner { width: 46px; height: 46px; margin: 0 auto; border-radius: 50%;
-               border: 5px solid rgba(255,255,255,.18); border-top-color: var(--brand);
-               animation: spin .9s linear infinite; }
+
+    .ov-card {
+      width: min(92vw, 360px);
+      text-align: center;
+      color: var(--txt);
+    }
+
+    .ov-title {
+      font-size: 22px;
+      font-weight: 800;
+      margin: 18px 0 6px;
+    }
+
+    #ov-text {
+      margin: 0 0 18px;
+      font-size: 15px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+
+    .spinner {
+      width: 46px;
+      height: 46px;
+      margin: 0 auto;
+      border-radius: 50%;
+      border: 5px solid rgba(255,255,255,.18);
+      border-top-color: var(--brand);
+      animation: spin .9s linear infinite;
+    }
+
     @keyframes spin { to { transform: rotate(360deg); } }
+
     #overlay.error .spinner { display: none; }
-    #ov-reload { min-height: 48px; padding: 0 22px; border: 0; border-radius: 14px; background: var(--brand);
-                 color: #fff; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; }
+
+    #ov-reload {
+      min-height: 48px;
+      padding: 0 22px;
+      border: 0;
+      border-radius: 14px;
+      background: var(--brand);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+    }
   </style>
 </head>
+
 <body>
   <div id="ar"></div>
 
   <div id="hud">
-    <div id="pill" class="chip"><span class="dot"></span><span id="pill-text">Memuat…</span></div>
+    <div id="pill" class="chip">
+      <span class="dot"></span>
+      <span id="pill-text">Memuat…</span>
+    </div>
     <div id="count" class="chip">Dipindai 0/0</div>
   </div>
 
   <div id="reticle" class="hide">
-    <i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i>
+    <i class="tl"></i>
+    <i class="tr"></i>
+    <i class="bl"></i>
+    <i class="br"></i>
     <span class="scan"></span>
     <div class="rhint">Arahkan kamera ke gambar target</div>
   </div>
+
+  <div id="chips" hidden><div class="row" id="chips-row"></div></div>
 
   <section id="sheet" aria-live="polite">
     <span class="tag" id="sheet-tag">Target</span>
     <h2 id="sheet-judul"></h2>
     <p id="sheet-isi"></p>
-    <div class="hints"><span>👆 Ketuk objek</span><span>🤏 Cubit untuk zoom</span></div>
+
+    <div class="hints">
+      <span id="hint-tap">👆 Ketuk objek</span>
+      <span>🤏 Cubit untuk zoom</span>
+    </div>
+
     <div class="actions">
       <button id="btn-reset" type="button">Reset ukuran</button>
       <a id="btn-link" class="primary" target="_blank" rel="noopener" hidden>Buka tautan</a>
@@ -141,46 +385,73 @@
   <script type="module">
     import * as THREE from 'three';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
     import { MindARThree } from 'mindar-image-three';
 
     const $ = (id) => document.getElementById(id);
+
     const ui = {
-      overlay: $('overlay'), ovText: $('ov-text'), reload: $('ov-reload'),
-      pill: $('pill'), pillText: $('pill-text'), count: $('count'),
-      reticle: $('reticle'), sheet: $('sheet'),
-      tag: $('sheet-tag'), judul: $('sheet-judul'), isi: $('sheet-isi'),
-      link: $('btn-link'), reset: $('btn-reset')
+      overlay: $('overlay'),
+      ovText: $('ov-text'),
+      reload: $('ov-reload'),
+      pill: $('pill'),
+      pillText: $('pill-text'),
+      count: $('count'),
+      reticle: $('reticle'),
+      sheet: $('sheet'),
+      tag: $('sheet-tag'),
+      judul: $('sheet-judul'),
+      isi: $('sheet-isi'),
+      link: $('btn-link'),
+      reset: $('btn-reset'),
+      chips: $('chips'),
+      chipsRow: $('chips-row'),
+      hintTap: $('hint-tap')
     };
+
     ui.reload.addEventListener('click', () => location.reload());
 
-    // ===== Penyimpanan lokal: daftar target yang sudah dipindai =====
     const KEY = 'posterhidup:dipindai';
+
     function loadSeen() {
-      try { return new Set(JSON.parse(localStorage.getItem(KEY) || '[]')); }
-      catch (e) { return new Set(); }
-    }
-    function saveSeen(set) {
-      try { localStorage.setItem(KEY, JSON.stringify([...set])); } catch (e) { /* abaikan */ }
+      try {
+        return new Set(JSON.parse(sessionStorage.getItem(KEY) || '[]'));
+      } catch {
+        return new Set();
+      }
     }
 
-    // ===== Helper tampilan =====
+    function saveSeen(set) {
+      try {
+        localStorage.setItem(KEY, JSON.stringify([...set]));
+      } catch {}
+    }
+
     function setLoading(text) {
       ui.overlay.className = 'show';
       ui.ovText.textContent = text;
       ui.reload.hidden = true;
     }
-    function hideLoading() { ui.overlay.className = ''; }
+
+    function hideLoading() {
+      ui.overlay.className = '';
+    }
+
     function showError(text) {
       ui.overlay.className = 'show error';
       ui.ovText.textContent = text;
       ui.reload.hidden = false;
     }
+
     function setSearching() {
       ui.pill.className = 'chip search';
       ui.pillText.textContent = 'Mencari target…';
       ui.reticle.classList.remove('hide');
       ui.sheet.classList.remove('show');
+      ui.chips.hidden = true;
+      ui.reset.textContent = 'Reset ukuran';
     }
+
     function setFound(t, i, n) {
       ui.pill.className = 'chip found';
       ui.pillText.textContent = 'Target ditemukan';
@@ -188,59 +459,396 @@
       ui.tag.textContent = 'Target ' + (i + 1) + ' dari ' + n;
       ui.judul.textContent = t.judul;
       ui.isi.textContent = t.deskripsi;
-      if (t.tautan) { ui.link.href = t.tautan; ui.link.hidden = false; }
-      else { ui.link.hidden = true; }
+
+      if (t.tautan) {
+        ui.link.href = t.tautan;
+        ui.link.hidden = false;
+      } else {
+        ui.link.hidden = true;
+      }
+
       ui.sheet.classList.add('show');
     }
 
-    // ===== Validasi isi JSON =====
     function validasi(data) {
-      if (!data || !Array.isArray(data.targets) || data.targets.length === 0)
+      if (!data || !Array.isArray(data.targets) || data.targets.length === 0) {
         throw new Error('targets.json kosong atau formatnya salah');
+      }
+
       for (const t of data.targets) {
-        for (const k of ['index', 'judul', 'deskripsi', 'model'])
-          if (t[k] === undefined) throw new Error('Field "' + k + '" hilang pada salah satu target');
+        for (const k of ['index', 'judul', 'deskripsi', 'model']) {
+          if (t[k] === undefined) {
+            throw new Error('Field "' + k + '" hilang pada salah satu target');
+          }
+        }
       }
     }
 
-    const cariKlip = (clips, nama) => clips.find((c) => c.name === nama) || null;
+    const cariKlip = (clips, nama) =>
+      clips.find((c) => c.name === nama) || null;
+
+    function bersihkanModelTataSurya(model) {
+      const namaDihapus = new Set([
+        'bg',
+        'asteroid',
+        'rocket',
+        'spaceshipcurve'
+      ]);
+
+      const objekDihapus = [];
+
+      model.traverse((obj) => {
+        if (namaDihapus.has(obj.name.trim().toLowerCase())) {
+          objekDihapus.push(obj);
+        }
+      });
+
+      for (const obj of objekDihapus) {
+        if (obj.parent) {
+          obj.parent.remove(obj);
+        }
+      }
+
+      model.updateMatrixWorld(true);
+
+      const bounds = new THREE.Box3().setFromObject(model);
+
+      const maxRadius = Math.max(
+        Math.abs(bounds.min.x),
+        Math.abs(bounds.max.x),
+        Math.abs(bounds.min.y),
+        Math.abs(bounds.max.y),
+        Math.abs(bounds.min.z),
+        Math.abs(bounds.max.z)
+      );
+
+      if (!Number.isFinite(maxRadius) || maxRadius <= 0) {
+        throw new Error('Ukuran model tata surya tidak dapat dibaca');
+      }
+
+      const ukuranAR = 1.1;
+      const skalaNormal = ukuranAR / (2 * maxRadius);
+
+      model.scale.setScalar(skalaNormal);
+
+      return {
+        skala: skalaNormal,
+        radius: maxRadius,
+        bounds
+      };
+    }
+
+    /* =====================================================================
+       TATA SURYA: mendukung dua GLB dengan struktur node berbeda.
+       Animasi bawaan berjalan otomatis saat target terdeteksi.
+       Planet dipilih dengan mengetuk mesh-nya langsung.
+       ===================================================================== */
+    const SOLAR_NODE_KEYS = {
+      Sun: 'sun', Mercury1: 'mercury', Venus1: 'venus', Earth1: 'earth',
+      Moon1: 'moon', Mars1: 'mars', Jupiter1: 'jupiter', Saturn1: 'saturn',
+      Uranus1: 'uranus', Neptune1: 'neptune', Pluto1: 'pluto'
+    };
+
+    function solarKeyFromNodeName(name) {
+      if (SOLAR_NODE_KEYS[name]) return SOLAR_NODE_KEYS[name];
+      const m = String(name || '').match(/^(sun|mercury|venus|erath|earth|mars|jupiter|saturn|uranus|neptune|pluto|moon)_\d+$/i);
+      if (!m) return null;
+      return m[1].toLowerCase() === 'erath' ? 'earth' : m[1].toLowerCase();
+    }
+
+    function setupTataSurya(model, t, dataPlanet) {
+      // GLB solar_system_with_animation.glb memiliki node BG berskala sangat
+      // besar. Lepaskan hanya node latar sebelum menghitung bounds agar ukuran
+      // dan posisi planet tidak ikut dihitung dari bola background.
+      // Material dan tekstur planet sengaja tidak disentuh.
+      const namaBackground = new Set(['bg', 'background', 'backgroundsphere', 'skybox']);
+      const backgroundNodes = [];
+      model.traverse((obj) => {
+        if (namaBackground.has(String(obj.name || '').trim().toLowerCase())) {
+          backgroundNodes.push(obj);
+        }
+      });
+      for (const obj of backgroundNodes) {
+        if (obj.parent) obj.parent.remove(obj);
+      }
+      model.updateMatrixWorld(true);
+
+      const info = new Map(dataPlanet.bodies.map((b) => [b.key, b]));
+      const bodies = new Map();
+      const nodesByKey = new Map();
+
+      // GLB solar_system_with_animation memakai Mercury1/Earth1, sedangkan
+      // solar_system_animation memakai mercury_2/erath_8, dst.
+      model.traverse((o) => {
+        const key = solarKeyFromNodeName(o.name);
+        if (!key || !info.has(key)) return;
+        if (!nodesByKey.has(key)) nodesByKey.set(key, []);
+        nodesByKey.get(key).push(o);
+      });
+
+      const meshes = [];
+      const bx = new THREE.Box3();
+      const sz = new THREE.Vector3();
+
+      for (const [key, candidates] of nodesByKey) {
+        // Pilih node terdalam yang punya mesh turunannya. Ini menghindari
+        // mengambil parent orbit BezierCircle pada solar_system_animation.
+        const sorted = [...candidates].sort((a, b) => {
+          const depth = (o) => { let n = 0; while (o.parent) { n++; o = o.parent; } return n; };
+          return depth(b) - depth(a);
+        });
+        let chosen = sorted.find((node) => {
+          let hasMesh = false;
+          node.traverse((o) => { if (o.isMesh) hasMesh = true; });
+          return hasMesh;
+        });
+        if (!chosen) chosen = candidates[0];
+
+        const b = { key, node: chosen, info: info.get(key), focusMesh: null };
+        chosen.traverse((o) => {
+          if (!o.isMesh) return;
+          // Jangan memasukkan mesh milik planet lain yang menjadi child.
+          let parent = o.parent;
+          let belongsToOtherBody = false;
+          while (parent && parent !== chosen) {
+            const parentKey = solarKeyFromNodeName(parent.name);
+            if (parentKey && parentKey !== key) { belongsToOtherBody = true; break; }
+            parent = parent.parent;
+          }
+          if (belongsToOtherBody) return;
+          o.userData.key = key;
+          meshes.push(o);
+          if (!b.focusMesh) b.focusMesh = o;
+        });
+
+        if (!b.focusMesh) continue;
+        bx.setFromObject(b.focusMesh);
+        bx.getSize(sz);
+        b.radius = Math.max(sz.x, sz.y, sz.z) / 2;
+        bodies.set(key, b);
+      }
+
+      if (bodies.size === 0) {
+        throw new Error('Node planet tidak ditemukan pada GLB. Periksa nama node dan file model.');
+      }
+
+      // Skala seragam saja agar rasio bentuk mesh tidak berubah.
+      model.updateMatrixWorld(true);
+      const full = new THREE.Box3().setFromObject(model);
+      const size = full.getSize(new THREE.Vector3());
+      if (backgroundNodes.length) {
+        console.info('Background GLB dilepas sebelum fit model:', backgroundNodes.map((o) => o.name));
+      }
+      const center = full.getCenter(new THREE.Vector3());
+      const lebar = Math.max(size.x, size.y, size.z);
+      if (!(lebar > 0) || !Number.isFinite(lebar)) {
+        throw new Error('Ukuran model tata surya tidak dapat dibaca');
+      }
+
+      const s = (t.lebarFit ?? 0.9) / lebar;
+      model.scale.setScalar(s);
+      model.position.copy(center).multiplyScalar(-s);
+
+      const rot = t.rotasi || [0, 0, 0];
+      const view = new THREE.Group();
+      // Jangan memaksa rotasi 90 derajat: pertahankan orientasi dari GLB.
+      view.rotation.set(rot[0], rot[1], rot[2]);
+      view.add(model);
+
+      const radiusFokus = t.radiusFokus ?? 0.2;
+      for (const b of bodies.values()) {
+        b.sFocus = THREE.MathUtils.clamp(radiusFokus / Math.max(b.radius * s, 0.0001), 1.5, 80);
+      }
+
+      return {
+        view, bodies,
+        meshes: meshes.filter((m) => bodies.has(m.userData.key)),
+        order: dataPlanet.bodies.map((b) => b.key).filter((k) => bodies.has(k)),
+        radiusFokus, started: false, focusKey: null, lastKey: null,
+        b: 0, lnS: 0
+      };
+    }
+
+    function mulaiTataSurya(en) {
+      const sol = en.sol;
+      if (!sol) return;
+
+      // Jika target sempat hilang lalu ditemukan lagi, lanjutkan timeline
+      // animasi yang sama. Jangan reset ke frame 0 setiap kali reacquire.
+      if (en.aksi) {
+        if (!sol.started) {
+          en.aksi.reset();
+          en.aksi.setLoop(THREE.LoopRepeat, Infinity);
+          en.aksi.clampWhenFinished = false;
+          en.aksi.play();
+          sol.started = true;
+        }
+        en.aksi.paused = false;
+        en.aksi.play();
+      }
+      ui.hintTap.textContent = '👆 Ketuk planet untuk melihat nama dan memperbesar';
+    }
+
+    function fokusPlanet(en, key) {
+      const sol = en.sol;
+      const b = sol.bodies.get(key);
+      if (!b) return;
+      sol.focusKey = key;
+      sol.lastKey = key;
+      const nomor = /^\d+$/.test(String(b.info.badge)) ? ' ' + b.info.badge : '';
+      ui.tag.textContent = b.info.type + nomor;
+      ui.judul.textContent = b.info.name;
+      ui.isi.textContent = b.info.description;
+      ui.reset.textContent = 'Kembali ke tata surya';
+    }
+
+    function batalFokus(en) {
+      const sol = en.sol;
+      sol.focusKey = null;
+
+      ui.tag.textContent = 'Target ' + (en.i + 1) + ' dari ' + en.total;
+      ui.judul.textContent = en.t.judul;
+      ui.isi.textContent = en.t.deskripsi;
+      ui.reset.textContent = 'Reset ukuran';
+
+    }
+
+    function tampilkanChips() {
+      // Tidak ada deretan tombol overlay; planet dipilih langsung pada model.
+      ui.chips.hidden = true;
+    }
+
+    // Target hilang: sembunyikan UI dan jeda animasi pada waktunya sekarang.
+    // Jangan reset clip ke frame 0, karena kehilangan tracking sesaat akan
+    // membuat animasi terus-menerus mulai ulang dan tampak seperti tidak bergerak.
+    function resetTataSurya(en) {
+      const sol = en.sol;
+      if (!sol) return;
+
+      sol.focusKey = null;
+      sol.lastKey = null;
+      sol.b = 0;
+      sol.lnS = 0;
+
+      sol.view.position.set(0, 0, 0);
+      sol.view.scale.setScalar(1);
+      en.holder.scale.setScalar(1);
+
+      if (en.aksi && sol.started) {
+        en.aksi.paused = true;
+      }
+
+      if (sol.badges) sol.badges.forEach((b) => { b.visible = false; });
+      ui.chips.hidden = true;
+    }
+
+    const _focusBox = new THREE.Box3();
+    const _qv = new THREE.Vector3();
+    const _pf = new THREE.Vector3();
+    const _tp = new THREE.Vector3();
+    const _off = new THREE.Vector3(0, 0.04, 0.02);
+
+    // Dipanggil tiap frame untuk target Tata Surya yang sedang aktif.
+    function updateTataSurya(en, dt) {
+      const sol = en.sol;
+      const k = 1 - Math.exp(-dt * 7);
+      const focused = sol.focusKey !== null;
+      const body = sol.lastKey ? sol.bodies.get(sol.lastKey) : null;
+
+      en.holder.updateWorldMatrix(true, true);
+      sol.b += ((focused ? 1 : 0) - sol.b) * k;
+      sol.lnS += (((focused && body) ? Math.log(body.sFocus) : 0) - sol.lnS) * k;
+      const S = Math.exp(sol.lnS);
+      sol.view.scale.setScalar(S);
+
+      if (body && sol.b > 0.001) {
+        en.holder.updateWorldMatrix(true, true);
+        _focusBox.setFromObject(body.focusMesh);
+        _focusBox.getCenter(_qv);
+        sol.view.worldToLocal(_qv);
+        _pf.copy(_qv).multiplyScalar(-S).applyQuaternion(sol.view.quaternion);
+        _pf.z += sol.radiusFokus * 0.9;
+        sol.view.position.set(0, 0, 0).lerp(_pf, sol.b);
+      } else {
+        sol.view.position.set(0, 0, 0);
+      }
+    }
 
     async function main() {
-      // 1) Muat data
       setLoading('Memuat data…');
+
       let data;
+
       try {
         const res = await fetch('data/targets.json');
-        if (!res.ok) throw new Error('HTTP ' + res.status);
+
+        if (!res.ok) {
+          throw new Error('HTTP ' + res.status);
+        }
+
         data = await res.json();
         validasi(data);
+
+        const aktifIdx = data.targets
+          .filter((x) => x.aktif !== false)
+          .map((x) => x.index);
+
+        if (aktifIdx.length === 0) {
+          throw new Error('Tidak ada target aktif di targets.json');
+        }
+
+        if (new Set(aktifIdx).size !== aktifIdx.length) {
+          throw new Error('Ada "index" ganda di targets.json');
+        }
       } catch (e) {
-        showError('Gagal memuat data: ' + e.message);
+        showError('Gagal memuat data: ' + (e.message || e));
         return;
       }
-      const total = data.targets.length;
+
+      // Target dengan "aktif": false dilewati (berguna untuk slot yang belum dipilih)
+      const targets = data.targets.filter((x) => x.aktif !== false);
+      const total = targets.length;
+      const aktifId = new Set(targets.map((x) => String(x.id ?? x.index)));
       const seen = loadSeen();
-      const updateCount = () => { ui.count.textContent = 'Dipindai ' + seen.size + '/' + total; };
+
+      const updateCount = () => {
+        const n = [...seen].filter((id) => aktifId.has(id)).length;
+        ui.count.textContent = 'Dipindai ' + n + '/' + total;
+      };
+
       updateCount();
 
-      // 2) Siapkan MindAR (UI bawaan dimatikan, kita pakai HUD sendiri)
       const mindar = new MindARThree({
         container: $('ar'),
         imageTargetSrc: 'assets/targets/targets.mind',
-        uiLoading: 'no', uiScanning: 'no', uiError: 'no'
+        // Filter lebih halus untuk mengurangi jitter posisi/rotasi anchor.
+        // Miss tolerance mencegah tracking flicker mereset tampilan terlalu cepat.
+        filterMinCF: 0.001,
+        filterBeta: 0.001,
+        warmupTolerance: 5,
+        missTolerance: 12,
+        maxTrack: 1,
+        uiLoading: 'no',
+        uiScanning: 'no',
+        uiError: 'no'
       });
+
       const { renderer, scene, camera } = mindar;
+
       scene.add(new THREE.HemisphereLight(0xffffff, 0x666666, 2.5));
 
       const loader = new GLTFLoader();
+      loader.setMeshoptDecoder(MeshoptDecoder);
       const entries = [];
       let active = null;
 
-      // 3) Anchor + model untuk tiap target
-      for (const [i, t] of data.targets.entries()) {
+      for (const [i, t] of targets.entries()) {
         setLoading('Memuat model 3D ' + (i + 1) + ' dari ' + total + '…');
+
         const anchor = mindar.addAnchor(t.index);
+
         let gltf;
+
         try {
           gltf = await loader.loadAsync(t.model);
         } catch (e) {
@@ -250,56 +858,164 @@
 
         const holder = new THREE.Group();
         const model = gltf.scene;
-        model.scale.setScalar(t.skala ?? 0.2);
-        model.position.set(...(t.posisi ?? [0, 0, 0.1]));
-        model.rotation.set(...(t.rotasi ?? [0, 0, 0]));
-        holder.add(model);
-        anchor.group.add(holder);
-
+        const solar = t.jenis === 'tatasurya';
+        // Orang utan harus diam pada pose awal; animasi bawaan hanya berjalan setelah diketuk.
+        const orangutan = t.id === 'save-orangutan' || t.index === 3;
         const mixer = new THREE.AnimationMixer(model);
-        const idleClip = cariKlip(gltf.animations, t.klipIdle) || gltf.animations[0] || null;
-        const aksiClip = cariKlip(gltf.animations, t.klipAksi);
+
+        const idleClip = (solar || t.ulangSaatDiklik || orangutan)
+          ? null
+          : (
+              cariKlip(gltf.animations, t.klipIdle) ||
+              gltf.animations[0] ||
+              null
+            );
+
+        // Gunakan klip animasi bawaan GLB; fallback ke klip pertama bila nama berbeda.
+        const aksiClip =
+          cariKlip(gltf.animations, t.klipAksi) ||
+          ((solar || orangutan) ? (gltf.animations[0] || null) : null);
+
         const en = {
-          t, holder, model, mixer,
+          t,
+          i,
+          total,
+          anchor,
+          holder,
+          model,
+          mixer,
           idle: idleClip ? mixer.clipAction(idleClip) : null,
           aksi: aksiClip ? mixer.clipAction(aksiClip) : null,
-          busy: false, spinLeft: 0
+          tapLoop: Boolean(t.ulangSaatDiklik || orangutan),
+          busy: false,
+          spinLeft: 0,
+          sol: null
         };
+
         en.idle?.play();
+
+        if (solar) {
+          // Animasi bawaan GLB disiapkan; mulai otomatis saat target ditemukan
+          if (en.aksi) {
+            en.aksi.play();
+            mixer.update(0);
+            en.aksi.paused = true;
+          }
+
+          model.updateMatrixWorld(true);
+
+          try {
+            if (!Array.isArray(t.planet) || t.planet.length === 0) {
+              throw new Error('field "planet" di targets.json kosong');
+            }
+
+            en.sol = setupTataSurya(model, t, { bodies: t.planet });
+          } catch (e) {
+            showError('Gagal menyiapkan model tata surya: ' + (e.message || e));
+            return;
+          }
+
+          holder.position.set(...(t.posisi || [0, 0, 0.15]));
+          holder.add(en.sol.view);
+        } else {
+          if (t.ulangSaatDiklik) {
+            // Model dengan animasi berulang setelah diketuk; perilaku target lama tetap dipertahankan.
+            try {
+              const hasil = bersihkanModelTataSurya(model);
+
+              console.log('Model tata surya berhasil disesuaikan');
+              console.log('Skala normalisasi:', hasil.skala);
+              console.log('Radius model:', hasil.radius);
+
+              const rotasi = t.rotasi || [0, 0, 0];
+
+              model.rotation.set(
+                -Math.PI / 2 + rotasi[0],
+                rotasi[1],
+                rotasi[2]
+              );
+
+              holder.position.set(
+                ...(t.posisi || [0, 0, 0.15])
+              );
+
+              model.position.set(0, 0, 0);
+            } catch (e) {
+              showError('Gagal menyesuaikan model tata surya: ' + e.message);
+              return;
+            }
+          } else {
+            model.scale.setScalar(t.skala ?? 0.2);
+            model.position.set(...(t.posisi ?? [0, 0, 0.1]));
+            model.rotation.set(...(t.rotasi ?? [0, 0, 0]));
+          }
+
+          holder.add(model);
+        }
+
+        anchor.group.add(holder);
 
         anchor.onTargetFound = () => {
           active = en;
+
           seen.add(String(t.id ?? t.index));
           saveSeen(seen);
           updateCount();
-          if (navigator.vibrate) navigator.vibrate(25);
+
           setFound(t, i, total);
+
+          if (en.sol) {
+            mulaiTataSurya(en);
+            ui.hintTap.textContent = '👆 Ketuk planet untuk melihat nama dan memperbesar';
+          } else {
+            ui.hintTap.textContent = '👆 Ketuk objek';
+          }
         };
+
         anchor.onTargetLost = () => {
-          if (active === en) active = null;
-          setSearching();
+          if (en.sol) resetTataSurya(en);
+
+          if (en.tapLoop && en.aksi) {
+            en.aksi.stop();
+            en.busy = false;
+          }
+
+          // Kembalikan mode scan untuk target yang benar-benar sedang aktif.
+          if (active === en) {
+            active = null;
+            setSearching();
+          }
         };
+
         entries.push(en);
       }
 
-      // 4) Jalankan kamera (tangani izin ditolak)
       setLoading('Menyalakan kamera… izinkan akses kamera jika diminta.');
+
       try {
         await mindar.start();
       } catch (e) {
-        const denied = e && (e.name === 'NotAllowedError' || /permission|denied/i.test(String(e)));
+        const denied =
+          e &&
+          (
+            e.name === 'NotAllowedError' ||
+            /permission|denied/i.test(String(e))
+          );
+
         showError(
           denied
             ? 'Izin kamera ditolak. Aktifkan izin kamera di pengaturan browser, lalu muat ulang halaman.'
-            : 'Kamera gagal dimulai: ' + (e.message || e)
+            : 'Kamera gagal dimulai: ' + (e?.message || e)
         );
+
         return;
       }
+
       hideLoading();
       setSearching();
 
-      // 5) Interaksi: ketuk = animasi aksi, cubit = zoom
       const dom = renderer.domElement;
+
       document.documentElement.style.touchAction = 'none';
       document.body.style.touchAction = 'none';
 
@@ -307,18 +1023,26 @@
       const ndc = new THREE.Vector2();
       const box = new THREE.Box3();
       const pointers = new Map();
-      let tapStart = null, pinchStart = 0, scaleStart = 1;
 
-      // Mode diagnosis: tambahkan ?debug di alamat web
+      let tapStart = null;
+      let pinchStart = 0;
+      let scaleStart = 1;
+
       const debugOn = new URLSearchParams(location.search).has('debug');
       const dbg = document.createElement('div');
+
       let lastEvt = '-';
+
       if (debugOn) {
-        dbg.style.cssText = 'position:fixed;top:96px;left:8px;z-index:20;background:rgba(0,0,0,.7);color:#0f0;font:12px monospace;padding:6px 8px;border-radius:6px;pointer-events:none;white-space:pre';
+        dbg.style.cssText =
+          'position:fixed;top:96px;left:8px;z-index:20;background:rgba(0,0,0,.7);color:#0f0;font:12px monospace;padding:6px 8px;border-radius:6px;pointer-events:none;white-space:pre';
+
         document.body.appendChild(dbg);
       }
+
       const info = () => {
         if (!debugOn) return;
+
         dbg.textContent =
           'target aktif: ' + (active ? (active.t.id || active.t.index) : 'tidak') +
           '\njari: ' + pointers.size +
@@ -333,52 +1057,127 @@
       };
 
       function mainkanAksi(en) {
+        if (en.tapLoop) {
+          if (!en.aksi || en.aksi.isRunning()) {
+            return;
+          }
+
+          en.aksi.reset();
+          en.aksi.setLoop(THREE.LoopRepeat, Infinity);
+          en.aksi.clampWhenFinished = false;
+          en.aksi.fadeIn(0.2).play();
+
+          lastEvt = en.t.id === 'save-orangutan' ? 'animasi orang utan dimulai' : 'animasi tata surya dimulai';
+          return;
+        }
+
         if (en.busy) return;
+
         en.busy = true;
+
         if (en.aksi) {
           en.idle?.fadeOut(0.2);
+
           en.aksi.reset().setLoop(THREE.LoopOnce, 1);
           en.aksi.clampWhenFinished = true;
           en.aksi.fadeIn(0.2).play();
+
           const selesai = (ev) => {
             if (ev.action !== en.aksi) return;
+
             en.mixer.removeEventListener('finished', selesai);
             en.aksi.fadeOut(0.2);
             en.idle?.reset().fadeIn(0.2).play();
             en.busy = false;
           };
+
           en.mixer.addEventListener('finished', selesai);
         } else {
           en.spinLeft = Math.PI * 2;
         }
       }
 
+      // Ketuk pada target Tata Surya: mulai animasi (sekali) + pilih planet
+      function tapTataSurya(en, kena) {
+        const sol = en.sol;
+        let key = null;
+
+        // Ketuk langsung mesh planet; tidak ada tombol/badge buatan di luar GLB.
+        const hits = raycaster.intersectObjects(sol.meshes, false);
+        if (hits.length) key = hits[0].object.userData.key;
+
+        if (!sol.started && (kena || key)) {
+          mulaiTataSurya(en);
+          lastEvt = 'animasi tata surya dimulai';
+        }
+
+        if (key) {
+          fokusPlanet(en, key);
+          lastEvt = 'fokus: ' + key;
+        } else if (sol.focusKey) {
+          batalFokus(en); // ketuk area kosong = kembali ke tampilan penuh
+          lastEvt = 'kembali ke tampilan penuh';
+        }
+      }
+
       function handleTap(e) {
-        if (!active) { lastEvt = 'ketuk: tidak ada target aktif'; return; }
+        if (!active) {
+          lastEvt = 'ketuk: tidak ada target aktif';
+          return;
+        }
+
         const r = dom.getBoundingClientRect();
+
         ndc.x = ((e.clientX - r.left) / r.width) * 2 - 1;
         ndc.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+
         raycaster.setFromCamera(ndc, camera);
         active.holder.updateWorldMatrix(true, true);
-        let kena = raycaster.intersectObject(active.holder, true).length > 0;
+
+        let kena =
+          raycaster.intersectObject(active.holder, true).length > 0;
+
         if (!kena) {
           box.setFromObject(active.holder).expandByScalar(0.15);
           kena = raycaster.ray.intersectsBox(box);
         }
+
+        if (active.sol) {
+          tapTataSurya(active, kena);
+          return;
+        }
+
         lastEvt = kena ? 'ketuk: KENA objek' : 'ketuk: meleset';
-        if (kena) mainkanAksi(active);
+
+        if (kena) {
+          mainkanAksi(active);
+        }
       }
 
-      const abaikan = (e) => e.target && e.target.closest && e.target.closest('#sheet, #overlay');
+      const abaikan = (e) =>
+        e.target &&
+        e.target.closest &&
+        e.target.closest('#sheet, #overlay, #chips');
 
       window.addEventListener('pointerdown', (e) => {
         if (abaikan(e)) return;
-        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+        pointers.set(e.pointerId, {
+          x: e.clientX,
+          y: e.clientY
+        });
+
         if (pointers.size === 1) {
-          tapStart = { x: e.clientX, y: e.clientY, t: performance.now() };
+          tapStart = {
+            x: e.clientX,
+            y: e.clientY,
+            t: performance.now()
+          };
+
           lastEvt = 'sentuh 1 jari';
         } else {
           tapStart = null;
+
           if (pointers.size === 2 && active) {
             pinchStart = jarak();
             scaleStart = active.holder.scale.x;
@@ -389,9 +1188,19 @@
 
       window.addEventListener('pointermove', (e) => {
         if (!pointers.has(e.pointerId)) return;
-        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+        pointers.set(e.pointerId, {
+          x: e.clientX,
+          y: e.clientY
+        });
+
         if (pointers.size === 2 && active && pinchStart > 0) {
-          const s = THREE.MathUtils.clamp(scaleStart * (jarak() / pinchStart), 0.5, 3);
+          const s = THREE.MathUtils.clamp(
+            scaleStart * (jarak() / pinchStart),
+            0.5,
+            3
+          );
+
           active.holder.scale.setScalar(s);
           lastEvt = 'cubit: ' + s.toFixed(2);
         }
@@ -399,49 +1208,103 @@
 
       const akhir = (e) => {
         if (!pointers.has(e.pointerId)) return;
-        if (e.type === 'pointerup' && pointers.size === 1 && tapStart) {
-          const geser = Math.hypot(e.clientX - tapStart.x, e.clientY - tapStart.y);
-          if (geser < 15 && performance.now() - tapStart.t < 500) handleTap(e);
+
+        if (
+          e.type === 'pointerup' &&
+          pointers.size === 1 &&
+          tapStart
+        ) {
+          const geser = Math.hypot(
+            e.clientX - tapStart.x,
+            e.clientY - tapStart.y
+          );
+
+          if (
+            geser < 15 &&
+            performance.now() - tapStart.t < 500
+          ) {
+            handleTap(e);
+          }
         }
+
         pointers.delete(e.pointerId);
-        if (pointers.size < 2) pinchStart = 0;
+
+        if (pointers.size < 2) {
+          pinchStart = 0;
+        }
       };
+
       window.addEventListener('pointerup', akhir);
       window.addEventListener('pointercancel', akhir);
 
-      // Zoom dengan scroll mouse / cubit touchpad (untuk uji di laptop)
       window.addEventListener('wheel', (e) => {
         if (!active) return;
+
         e.preventDefault();
+
         const k = e.ctrlKey ? 0.01 : 0.002;
-        const s = THREE.MathUtils.clamp(active.holder.scale.x * Math.exp(-e.deltaY * k), 0.5, 3);
+
+        const s = THREE.MathUtils.clamp(
+          active.holder.scale.x * Math.exp(-e.deltaY * k),
+          0.5,
+          3
+        );
+
         active.holder.scale.setScalar(s);
       }, { passive: false });
 
-      // Tombol reset ukuran
       ui.reset.addEventListener('click', () => {
-        if (active) active.holder.scale.setScalar(1);
+        if (!active) return;
+
+        if (active.sol && active.sol.focusKey) {
+          batalFokus(active);
+        }
+
+        active.holder.scale.setScalar(1);
       });
 
-      // 6) Render loop
       const clock = new THREE.Clock();
+
       renderer.setAnimationLoop(() => {
         const dt = clock.getDelta();
+
+        // Fallback UI: bila event targetLost terlewat tetapi anchor sudah
+        // disembunyikan oleh MindAR, jangan biarkan status "Target ditemukan" nyangkut.
+        if (active && active.anchor && active.anchor.group && !active.anchor.group.visible) {
+          const lost = active;
+          active = null;
+          if (lost.sol) resetTataSurya(lost);
+          setSearching();
+        }
+
         for (const en of entries) {
           en.mixer.update(dt);
+
+          if (en.sol && active === en) {
+            updateTataSurya(en, dt);
+          }
+
           if (en.spinLeft > 0) {
             const step = Math.min(en.spinLeft, dt * 6);
+
             en.model.rotation.y += step;
             en.spinLeft -= step;
-            if (en.spinLeft <= 0) en.busy = false;
+
+            if (en.spinLeft <= 0) {
+              en.busy = false;
+            }
           }
         }
+
         info();
         renderer.render(scene, camera);
       });
     }
 
-    main();
+    main().catch((e) => {
+      console.error('Kesalahan aplikasi AR:', e);
+      showError('Aplikasi gagal dijalankan: ' + (e?.message || e));
+    });
   </script>
 </body>
 </html>
