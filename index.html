@@ -342,10 +342,15 @@
     #chips button.on{background:var(--c);border-color:transparent;color:#0f172a}
     #chips button.on i{background:#0f172a}
     /* panel informasi di atas */
-    #sheet{padding:12px 14px;max-height:42vh;overflow-y:auto;translate:var(--dx,0px) var(--dy,0px)}
-    #sheet .grip{height:18px;margin:-6px 0 2px;display:flex;align-items:center;justify-content:center;cursor:grab;touch-action:none}
-    #sheet .grip i{width:44px;height:5px;border-radius:3px;background:rgba(255,255,255,.35)}
-    #sheet .grip:active{cursor:grabbing}
+    #sheet{padding:12px 14px;max-height:42vh;overflow-y:auto}
+    #sheet.show.tutup{transform:translateY(130%);opacity:0;pointer-events:none}
+    #sheet h2{padding-right:38px}
+    #sheet .close{position:absolute;top:8px;right:10px;width:32px;height:32px;border-radius:50%;
+      border:1px solid var(--line);background:rgba(255,255,255,.12);color:var(--txt);font-size:15px;cursor:pointer}
+    #sheet .close:active{transform:scale(.92)}
+    #btn-info{position:fixed;left:50%;bottom:calc(16px + var(--safe-b));transform:translateX(-50%);z-index:10;
+      padding:10px 18px;border-radius:999px;border:1px solid var(--line);background:var(--glass);
+      backdrop-filter:blur(10px);color:var(--txt);font:600 14px system-ui,sans-serif;cursor:pointer}
     #sheet h2{font-size:18px;margin:8px 0 4px}
     #sheet p{font-size:13px;margin:0 0 10px}
     #sheet .hints{margin-bottom:10px}
@@ -381,6 +386,8 @@
     <div class="rhint">Arahkan kamera ke gambar target</div>
   </div>
 
+  <button id="btn-info" type="button" hidden>ℹ️ Info</button>
+
   <div id="speed" hidden>
     <button id="spd-dn" type="button" aria-label="Lebih lambat">−</button>
     <span id="spd-val">Kecepatan 1×</span>
@@ -390,7 +397,7 @@
   <div id="chips" hidden><div class="row" id="chips-row"></div></div>
 
   <section id="sheet" aria-live="polite">
-    <div class="grip" id="sheet-grip" title="Geser panel (ketuk 2x untuk reset)"><i></i></div>
+    <button class="close" id="sheet-close" type="button" aria-label="Sembunyikan panel">✕</button>
     <span class="tag" id="sheet-tag">Target</span>
     <h2 id="sheet-judul"></h2>
     <p id="sheet-isi"></p>
@@ -451,6 +458,7 @@
       reset: $('btn-reset'),
       stats: $('sheet-stats'),
       speed: $('speed'),
+      btnInfo: $('btn-info'),
       spdVal: $('spd-val'),
       chips: $('chips'),
       chipsRow: $('chips-row'),
@@ -498,6 +506,7 @@
       ui.sheet.classList.remove('show');
       ui.chips.hidden = true;
       ui.speed.hidden = true;
+      ui.btnInfo.hidden = true;
       ui.reset.textContent = 'Reset posisi & ukuran';
     }
 
@@ -519,6 +528,7 @@
       ui.stats.hidden = true;
       ui.sheet.style.setProperty('--accent', '#3b82f6');
       ui.sheet.classList.add('show');
+      ui.btnInfo.hidden = !ui.sheet.classList.contains('tutup');
     }
 
     function validasi(data) {
@@ -751,6 +761,7 @@
       ui.judul.textContent = b.info.name;
       ui.isi.textContent = b.info.description;
       ui.reset.textContent = 'Kembali ke tata surya';
+      bukaPanel();
       ui.sheet.style.setProperty('--accent', b.info.warna || '#3b82f6');
       ui.stats.innerHTML = (b.info.stats || [])
         .map(([l, v]) => '<div><small>' + l + '</small><b>' + v + '</b></div>').join('');
@@ -771,6 +782,16 @@
       ui.sheet.style.setProperty('--accent', '#3b82f6');
       ui.sheet.classList.remove('swap'); void ui.sheet.offsetWidth; ui.sheet.classList.add('swap');
       ui.chipsRow.querySelectorAll('button').forEach((x) => x.classList.remove('on'));
+    }
+
+    function tutupPanel() {
+      ui.sheet.classList.add('tutup');
+      ui.btnInfo.hidden = false;
+    }
+
+    function bukaPanel() {
+      ui.sheet.classList.remove('tutup');
+      ui.btnInfo.hidden = true;
     }
 
     function tampilkanChips(en) {
@@ -920,31 +941,8 @@
         active.mixer.timeScale = s;
         ui.spdVal.textContent = 'Kecepatan ' + (+s.toFixed(2)) + '×';
       };
-      const grip = $('sheet-grip');
-      let pDrag = null;
-      grip.addEventListener('pointerdown', (e) => {
-        grip.setPointerCapture(e.pointerId);
-        pDrag = {
-          x: e.clientX, y: e.clientY,
-          r: ui.sheet.getBoundingClientRect(),
-          x0: parseFloat(ui.sheet.style.getPropertyValue('--dx')) || 0,
-          y0: parseFloat(ui.sheet.style.getPropertyValue('--dy')) || 0
-        };
-      });
-      grip.addEventListener('pointermove', (e) => {
-        if (!pDrag) return;
-        const dx = THREE.MathUtils.clamp(e.clientX - pDrag.x, -pDrag.r.left, innerWidth - pDrag.r.right);
-        const dy = THREE.MathUtils.clamp(e.clientY - pDrag.y, -pDrag.r.top, innerHeight - pDrag.r.bottom);
-        ui.sheet.style.setProperty('--dx', (pDrag.x0 + dx) + 'px');
-        ui.sheet.style.setProperty('--dy', (pDrag.y0 + dy) + 'px');
-      });
-      const lepasPanel = () => { pDrag = null; };
-      grip.addEventListener('pointerup', lepasPanel);
-      grip.addEventListener('pointercancel', lepasPanel);
-      grip.addEventListener('dblclick', () => {
-        ui.sheet.style.removeProperty('--dx');
-        ui.sheet.style.removeProperty('--dy');
-      });
+      $('sheet-close').addEventListener('click', tutupPanel);
+      ui.btnInfo.addEventListener('click', bukaPanel);
 
       $('spd-dn').addEventListener('click', () => active && setKecepatan(active.mixer.timeScale * 0.7));
       $('spd-up').addEventListener('click', () => active && setKecepatan(active.mixer.timeScale / 0.7));
@@ -1353,7 +1351,7 @@
       const abaikan = (e) =>
         e.target &&
         e.target.closest &&
-        e.target.closest('#sheet, #overlay, #chips, #speed');
+        e.target.closest('#sheet, #overlay, #chips, #speed, #btn-info');
 
       window.addEventListener('pointerdown', (e) => {
         if (abaikan(e)) return;
