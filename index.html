@@ -348,6 +348,15 @@
     #sheet .close{position:absolute;top:8px;right:10px;width:32px;height:32px;border-radius:50%;
       border:1px solid var(--line);background:rgba(255,255,255,.12);color:var(--txt);font-size:15px;cursor:pointer}
     #sheet .close:active{transform:scale(.92)}
+    #prog{margin:0 0 12px}
+    #prog .bar{height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}
+    #prog .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .5s}
+    #prog small{display:block;margin-top:5px;font-size:11.5px;color:var(--muted)}
+    #toast{position:fixed;left:50%;top:calc(58px + var(--safe-t));transform:translate(-50%,-20px);z-index:30;
+      max-width:88vw;padding:10px 16px;border-radius:14px;background:rgba(15,23,42,.92);color:#fff;
+      border:1px solid var(--line);font:600 13px system-ui,sans-serif;text-align:center;opacity:0;pointer-events:none;
+      transition:opacity .3s,transform .3s}
+    #toast.on{opacity:1;transform:translate(-50%,0)}
     #btn-info{position:fixed;left:50%;bottom:calc(16px + var(--safe-b));transform:translateX(-50%);z-index:10;
       padding:10px 18px;border-radius:999px;border:1px solid var(--line);background:var(--glass);
       backdrop-filter:blur(10px);color:var(--txt);font:600 14px system-ui,sans-serif;cursor:pointer}
@@ -363,6 +372,7 @@
       color:var(--txt);font-size:20px;line-height:1;cursor:pointer}
     #speed button:active{transform:scale(.92)}
     #speed span{min-width:92px;text-align:center}
+    #speed #btn-latar.off{opacity:.4}
   </style>
 </head>
 
@@ -386,12 +396,15 @@
     <div class="rhint">Arahkan kamera ke gambar target</div>
   </div>
 
+  <div id="toast" role="status"></div>
+
   <button id="btn-info" type="button" hidden>ℹ️ Info</button>
 
   <div id="speed" hidden>
     <button id="spd-dn" type="button" aria-label="Lebih lambat">−</button>
     <span id="spd-val">Kecepatan 1×</span>
     <button id="spd-up" type="button" aria-label="Lebih cepat">+</button>
+    <button id="btn-latar" type="button" aria-label="Latar angkasa">🌌</button>
   </div>
 
   <div id="chips" hidden><div class="row" id="chips-row"></div></div>
@@ -402,6 +415,7 @@
     <h2 id="sheet-judul"></h2>
     <p id="sheet-isi"></p>
     <div class="stats" id="sheet-stats" hidden></div>
+    <div id="prog" hidden><div class="bar"><i id="prog-i"></i></div><small id="prog-t"></small></div>
 
     <div class="hints">
       <span id="hint-tap">👆 Ketuk objek</span>
@@ -459,6 +473,10 @@
       stats: $('sheet-stats'),
       speed: $('speed'),
       btnInfo: $('btn-info'),
+      prog: $('prog'),
+      progI: $('prog-i'),
+      progT: $('prog-t'),
+      toast: $('toast'),
       spdVal: $('spd-val'),
       chips: $('chips'),
       chipsRow: $('chips-row'),
@@ -505,6 +523,7 @@
       ui.reticle.classList.remove('hide');
       ui.sheet.classList.remove('show');
       ui.chips.hidden = true;
+      redupKamera(false);
       ui.speed.hidden = true;
       ui.btnInfo.hidden = true;
       ui.reset.textContent = 'Reset posisi & ukuran';
@@ -525,16 +544,13 @@
         ui.link.hidden = true;
       }
 
-
-     
       ui.stats.innerHTML = (t.stats || [])
-       .map(([l, v]) => '<div><small>' + l + '</small><b>' + v + '</b></div>').join('');
+        .map(([l, v]) => '<div><small>' + l + '</small><b>' + v + '</b></div>').join('');
       ui.stats.hidden = !(t.stats || []).length;
       ui.sheet.style.setProperty('--accent', t.warna || '#3b82f6');
-       ui.sheet.classList.add('show');
-       ui.btnInfo.hidden = !ui.sheet.classList.contains('tutup');
       ui.sheet.classList.add('show');
       ui.btnInfo.hidden = !ui.sheet.classList.contains('tutup');
+      ui.prog.hidden = true;
     }
 
     function validasi(data) {
@@ -712,6 +728,16 @@
         throw new Error('Ukuran model tata surya tidak dapat dibaca');
       }
 
+      let glow = null;
+      const sunB = bodies.get('sun');
+      if (sunB) {
+        const pusat = new THREE.Box3().setFromObject(sunB.focusMesh).getCenter(new THREE.Vector3());
+        glow = buatGlow();
+        glow.position.copy(pusat);
+        glow.scale.setScalar(sunB.radius * 6);
+        model.add(glow);
+      }
+
       const s = (t.lebarFit ?? 0.9) / lebar;
       model.scale.setScalar(s);
       model.position.copy(center).multiplyScalar(-s);
@@ -731,6 +757,7 @@
         view, bodies,
         meshes: meshes.filter((m) => bodies.has(m.userData.key)),
         order: dataPlanet.bodies.map((b) => b.key).filter((k) => bodies.has(k)),
+        glow, glowBase: glow ? glow.scale.x : 0,
         radiusFokus, started: false, focusKey: null, lastKey: null,
         b: 0, lnS: 0
       };
@@ -768,6 +795,9 @@
       ui.isi.textContent = b.info.description;
       ui.reset.textContent = 'Kembali ke tata surya';
       bukaPanel();
+      navigator.vibrate?.(30);
+      redupKamera(true);
+      tandaiPlanet(en, key);
       ui.sheet.style.setProperty('--accent', b.info.warna || '#3b82f6');
       ui.stats.innerHTML = (b.info.stats || [])
         .map(([l, v]) => '<div><small>' + l + '</small><b>' + v + '</b></div>').join('');
@@ -783,11 +813,136 @@
       ui.tag.textContent = 'Target ' + (en.i + 1) + ' dari ' + en.total;
       ui.judul.textContent = en.t.judul;
       ui.isi.textContent = en.t.deskripsi;
+      redupKamera(false);
       ui.reset.textContent = 'Reset posisi & ukuran';
       ui.stats.hidden = true;
       ui.sheet.style.setProperty('--accent', '#3b82f6');
       ui.sheet.classList.remove('swap'); void ui.sheet.offsetWidth; ui.sheet.classList.add('swap');
       ui.chipsRow.querySelectorAll('button').forEach((x) => x.classList.remove('on'));
+    }
+
+    // ---- latar angkasa: bintang 3D, cakram gelap, cahaya Matahari ----
+    let latarOn = true;
+    const tanpaRaycast = (o) => { o.raycast = () => {}; };
+
+    function radialTex(stops) {
+      const c = document.createElement('canvas');
+      c.width = c.height = 128;
+      const x = c.getContext('2d');
+      const g = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+      for (const [p, warna] of stops) g.addColorStop(p, warna);
+      x.fillStyle = g;
+      x.fillRect(0, 0, 128, 128);
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function buatGlow() {
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: radialTex([[0, 'rgba(255,214,102,1)'], [0.25, 'rgba(255,160,40,.55)'], [1, 'rgba(255,100,0,0)']]),
+        blending: THREE.AdditiveBlending, transparent: true, depthWrite: false
+      }));
+      tanpaRaycast(sp);
+      return sp;
+    }
+
+    function buatLatar() {
+      const g = new THREE.Group();
+
+      const disc = new THREE.Mesh(
+        new THREE.CircleGeometry(0.95, 48),
+        new THREE.MeshBasicMaterial({
+          map: radialTex([[0, 'rgba(8,14,40,.75)'], [0.6, 'rgba(8,14,40,.45)'], [1, 'rgba(8,14,40,0)']]),
+          transparent: true, depthWrite: false
+        })
+      );
+      disc.position.z = -0.45;
+      tanpaRaycast(disc);
+      g.add(disc);
+
+      const stars = new THREE.Group();
+      const layers = [];
+      const bulat = radialTex([[0, 'rgba(255,255,255,1)'], [0.4, 'rgba(255,255,255,.8)'], [1, 'rgba(255,255,255,0)']]);
+      const warna = ['#ffffff', '#bcd4ff', '#ffe9b0'].map((c) => new THREE.Color(c));
+
+      for (const [n, size] of [[420, 0.014], [70, 0.03]]) {
+        const pos = new Float32Array(n * 3);
+        const col = new Float32Array(n * 3);
+        for (let i = 0; i < n; i++) {
+          const r = 0.5 + Math.random() * 0.7;
+          const u = Math.random() * 1.35 - 1; // hanya sisi belakang dan samping
+          const th = Math.random() * Math.PI * 2;
+          const s = Math.sqrt(1 - u * u);
+          pos.set([r * s * Math.cos(th), r * s * Math.sin(th), r * u], i * 3);
+          const c = warna[Math.floor(Math.random() * 3)];
+          col.set([c.r, c.g, c.b], i * 3);
+        }
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+        const pts = new THREE.Points(geo, new THREE.PointsMaterial({
+          size, map: bulat, vertexColors: true, transparent: true,
+          depthWrite: false, sizeAttenuation: true, alphaTest: 0.01
+        }));
+        pts.frustumCulled = false;
+        tanpaRaycast(pts);
+        stars.add(pts);
+        layers.push(pts);
+      }
+      g.add(stars);
+      g.userData = { stars, layers };
+      return g;
+    }
+
+    // Redupkan hanya video kamera (bukan model 3D) saat zoom ke planet.
+    function redupKamera(on) {
+      const v = document.querySelector('#ar video');
+      if (!v) return;
+      v.style.transition = 'filter .6s';
+      v.style.filter = (on && latarOn) ? 'brightness(.5) saturate(.85)' : '';
+    }
+
+    // ---- lencana penjelajah ----
+    const KEY_PLANET = 'posterhidup:planet';
+
+    function muatPlanet() {
+      try {
+        return new Set(JSON.parse(localStorage.getItem(KEY_PLANET) || '[]'));
+      } catch {
+        return new Set();
+      }
+    }
+
+    function tampilToast(teks) {
+      ui.toast.textContent = teks;
+      ui.toast.classList.add('on');
+      clearTimeout(tampilToast.t);
+      tampilToast.t = setTimeout(() => ui.toast.classList.remove('on'), 3500);
+    }
+
+    function hitungPlanet(en) {
+      return [...muatPlanet()].filter((k) => en.sol.bodies.has(k)).length;
+    }
+
+    function perbaruiProg(en) {
+      const n = hitungPlanet(en);
+      const total = en.sol.order.length;
+      ui.progI.style.width = (n / total * 100) + '%';
+      ui.progT.textContent = '🪐 Dijelajahi ' + n + '/' + total + (n === total ? ' • Lengkap!' : '');
+    }
+
+    function tandaiPlanet(en, key) {
+      const s = muatPlanet();
+      if (s.has(key)) return;
+      s.add(key);
+      try { localStorage.setItem(KEY_PLANET, JSON.stringify([...s])); } catch {}
+      perbaruiProg(en);
+      const n = hitungPlanet(en);
+      const total = en.sol.order.length;
+      tampilToast(n === total
+        ? '🏆 Penjelajah Tata Surya! Semua objek sudah kamu lihat'
+        : '✨ Baru: ' + en.sol.bodies.get(key).info.name + ' (' + n + '/' + total + ')');
     }
 
     function tutupPanel() {
@@ -947,6 +1102,15 @@
         active.mixer.timeScale = s;
         ui.spdVal.textContent = 'Kecepatan ' + (+s.toFixed(2)) + '×';
       };
+      $('btn-latar').addEventListener('click', () => {
+        latarOn = !latarOn;
+        $('btn-latar').classList.toggle('off', !latarOn);
+        if (active && active.latar) active.latar.visible = latarOn;
+        if (active && active.sol && active.sol.glow) active.sol.glow.visible = latarOn;
+        redupKamera(Boolean(active && active.sol && active.sol.focusKey));
+        tampilToast(latarOn ? '🌌 Latar angkasa aktif' : 'Latar angkasa dimatikan');
+      });
+
       $('sheet-close').addEventListener('click', tutupPanel);
       ui.btnInfo.addEventListener('click', bukaPanel);
 
@@ -1029,6 +1193,8 @@
 
           holder.position.set(...(t.posisi || [0, 0, 0.15]));
           holder.add(en.sol.view);
+          en.latar = buatLatar();
+          holder.add(en.latar);
         } else {
           if (t.ulangSaatDiklik) {
             // Model dengan animasi berulang setelah diketuk; perilaku target lama tetap dipertahankan.
@@ -1079,6 +1245,8 @@
           if (en.sol) {
             mulaiTataSurya(en);
             ui.speed.hidden = false;
+            ui.prog.hidden = false;
+            perbaruiProg(en);
             setKecepatan(en.mixer.timeScale);
             ui.hintTap.textContent = '👆 Ketuk planet untuk melihat informasinya';
           } else {
@@ -1239,6 +1407,7 @@
 
       function mainkanAksi(en) {
         mainkanSuara(en.t);
+        navigator.vibrate?.(50);
 
         if (en.tapLoop) {
           if (!en.aksi || en.aksi.isRunning()) {
@@ -1338,7 +1507,7 @@
           raycaster.intersectObject(active.holder, true).length > 0;
 
         if (!kena) {
-          box.setFromObject(active.holder).expandByScalar(0.15);
+          box.setFromObject(active.sol ? active.sol.view : active.holder).expandByScalar(0.15);
           kena = raycaster.ray.intersectsBox(box);
         }
 
@@ -1472,6 +1641,19 @@
 
       renderer.setAnimationLoop(() => {
         const dt = clock.getDelta();
+
+        if (active && active.latar && active.latar.visible) {
+          const tt = clock.elapsedTime;
+          const { stars, layers } = active.latar.userData;
+          stars.rotation.y = tt * 0.015;
+          stars.rotation.x = Math.sin(tt * 0.05) * 0.1;
+          layers.forEach((l, i) => {
+            l.material.opacity = 0.65 + 0.3 * Math.sin(tt * (0.8 + i * 0.6) + i * 2);
+          });
+          if (active.sol && active.sol.glow) {
+            active.sol.glow.scale.setScalar(active.sol.glowBase * (1 + 0.06 * Math.sin(tt * 1.6)));
+          }
+        }
 
         // Fallback UI: bila event targetLost terlewat tetapi anchor sudah
         // disembunyikan oleh MindAR, jangan biarkan status "Target ditemukan" nyangkut.
