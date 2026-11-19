@@ -323,6 +323,41 @@
       font-family: inherit;
       cursor: pointer;
     }
+
+    #sheet{--accent:var(--brand);border-top:3px solid var(--accent)}
+    #sheet .tag{color:#fff;background:color-mix(in srgb,var(--accent) 55%,transparent)}
+    #sheet .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+    #sheet .stats div{background:rgba(255,255,255,.08);border-radius:12px;padding:8px 6px;text-align:center}
+    #sheet .stats small{display:block;font-size:10.5px;color:var(--muted);margin-bottom:2px}
+    #sheet .stats b{font-size:12.5px;color:var(--txt)}
+    #sheet.swap h2,#sheet.swap p,#sheet.swap .stats{animation:pop .35s both}
+    @keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+    #chips{position:fixed;left:0;right:0;top:calc(58px + var(--safe-t));z-index:10}
+    #chips .row{display:flex;gap:8px;overflow-x:auto;padding:4px 12px;scrollbar-width:none}
+    #chips .row::-webkit-scrollbar{display:none}
+    #chips button{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:8px 13px;border-radius:999px;
+      border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(10px);color:var(--txt);
+      font:600 13px system-ui,sans-serif;cursor:pointer}
+    #chips button i{width:10px;height:10px;border-radius:50%;background:var(--c)}
+    #chips button.on{background:var(--c);border-color:transparent;color:#0f172a}
+    #chips button.on i{background:#0f172a}
+    /* panel informasi di atas */
+    #sheet{padding:12px 14px;max-height:42vh;overflow-y:auto;translate:var(--dx,0px) var(--dy,0px)}
+    #sheet .grip{height:18px;margin:-6px 0 2px;display:flex;align-items:center;justify-content:center;cursor:grab;touch-action:none}
+    #sheet .grip i{width:44px;height:5px;border-radius:3px;background:rgba(255,255,255,.35)}
+    #sheet .grip:active{cursor:grabbing}
+    #sheet h2{font-size:18px;margin:8px 0 4px}
+    #sheet p{font-size:13px;margin:0 0 10px}
+    #sheet .hints{margin-bottom:10px}
+    #sheet .actions > *{min-height:40px;font-size:14px}
+    /* kontrol kecepatan */
+    #speed{position:fixed;left:50%;top:calc(58px + var(--safe-t));transform:translateX(-50%);z-index:10;
+      display:flex;align-items:center;gap:10px;padding:6px 12px;border-radius:999px;color:var(--txt);
+      background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--line);font:600 13px system-ui,sans-serif}
+    #speed button{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.12);
+      color:var(--txt);font-size:20px;line-height:1;cursor:pointer}
+    #speed button:active{transform:scale(.92)}
+    #speed span{min-width:92px;text-align:center}
   </style>
 </head>
 
@@ -346,20 +381,29 @@
     <div class="rhint">Arahkan kamera ke gambar target</div>
   </div>
 
+  <div id="speed" hidden>
+    <button id="spd-dn" type="button" aria-label="Lebih lambat">−</button>
+    <span id="spd-val">Kecepatan 1×</span>
+    <button id="spd-up" type="button" aria-label="Lebih cepat">+</button>
+  </div>
+
   <div id="chips" hidden><div class="row" id="chips-row"></div></div>
 
   <section id="sheet" aria-live="polite">
+    <div class="grip" id="sheet-grip" title="Geser panel (ketuk 2x untuk reset)"><i></i></div>
     <span class="tag" id="sheet-tag">Target</span>
     <h2 id="sheet-judul"></h2>
     <p id="sheet-isi"></p>
+    <div class="stats" id="sheet-stats" hidden></div>
 
     <div class="hints">
       <span id="hint-tap">👆 Ketuk objek</span>
-      <span>🤏 Cubit untuk zoom</span>
+      <span>🤏 Cubit zoom</span>
+      <span>☝️ Seret untuk geser model</span>
     </div>
 
     <div class="actions">
-      <button id="btn-reset" type="button">Reset ukuran</button>
+      <button id="btn-reset" type="button">Reset posisi & ukuran</button>
       <a id="btn-link" class="primary" target="_blank" rel="noopener" hidden>Buka tautan</a>
     </div>
   </section>
@@ -405,6 +449,9 @@
       isi: $('sheet-isi'),
       link: $('btn-link'),
       reset: $('btn-reset'),
+      stats: $('sheet-stats'),
+      speed: $('speed'),
+      spdVal: $('spd-val'),
       chips: $('chips'),
       chipsRow: $('chips-row'),
       hintTap: $('hint-tap')
@@ -416,7 +463,7 @@
 
     function loadSeen() {
       try {
-        return new Set(JSON.parse(sessionStorage.getItem(KEY) || '[]'));
+        return new Set(JSON.parse(localStorage.getItem(KEY) || '[]'));
       } catch {
         return new Set();
       }
@@ -450,7 +497,8 @@
       ui.reticle.classList.remove('hide');
       ui.sheet.classList.remove('show');
       ui.chips.hidden = true;
-      ui.reset.textContent = 'Reset ukuran';
+      ui.speed.hidden = true;
+      ui.reset.textContent = 'Reset posisi & ukuran';
     }
 
     function setFound(t, i, n) {
@@ -468,6 +516,8 @@
         ui.link.hidden = true;
       }
 
+      ui.stats.hidden = true;
+      ui.sheet.style.setProperty('--accent', '#3b82f6');
       ui.sheet.classList.add('show');
     }
 
@@ -562,7 +612,7 @@
       // besar. Lepaskan hanya node latar sebelum menghitung bounds agar ukuran
       // dan posisi planet tidak ikut dihitung dari bola background.
       // Material dan tekstur planet sengaja tidak disentuh.
-      const namaBackground = new Set(['bg', 'background', 'backgroundsphere', 'skybox']);
+      const namaBackground = new Set(['bg', 'background', 'backgroundsphere', 'skybox', 'rocket', 'spaceshipcurve']);
       const backgroundNodes = [];
       model.traverse((obj) => {
         if (namaBackground.has(String(obj.name || '').trim().toLowerCase())) {
@@ -701,6 +751,12 @@
       ui.judul.textContent = b.info.name;
       ui.isi.textContent = b.info.description;
       ui.reset.textContent = 'Kembali ke tata surya';
+      ui.sheet.style.setProperty('--accent', b.info.warna || '#3b82f6');
+      ui.stats.innerHTML = (b.info.stats || [])
+        .map(([l, v]) => '<div><small>' + l + '</small><b>' + v + '</b></div>').join('');
+      ui.stats.hidden = !(b.info.stats || []).length;
+      ui.sheet.classList.remove('swap'); void ui.sheet.offsetWidth; ui.sheet.classList.add('swap');
+      ui.chipsRow.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x.dataset.key === key));
     }
 
     function batalFokus(en) {
@@ -710,13 +766,28 @@
       ui.tag.textContent = 'Target ' + (en.i + 1) + ' dari ' + en.total;
       ui.judul.textContent = en.t.judul;
       ui.isi.textContent = en.t.deskripsi;
-      ui.reset.textContent = 'Reset ukuran';
-
+      ui.reset.textContent = 'Reset posisi & ukuran';
+      ui.stats.hidden = true;
+      ui.sheet.style.setProperty('--accent', '#3b82f6');
+      ui.sheet.classList.remove('swap'); void ui.sheet.offsetWidth; ui.sheet.classList.add('swap');
+      ui.chipsRow.querySelectorAll('button').forEach((x) => x.classList.remove('on'));
     }
 
-    function tampilkanChips() {
-      // Tidak ada deretan tombol overlay; planet dipilih langsung pada model.
-      ui.chips.hidden = true;
+    function tampilkanChips(en) {
+      ui.chipsRow.innerHTML = '';
+      for (const key of en.sol.order) {
+        const b = en.sol.bodies.get(key);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.dataset.key = key;
+        btn.style.setProperty('--c', b.info.warna || '#3b82f6');
+        btn.innerHTML = '<i></i>' + b.info.name;
+        btn.addEventListener('click', () => {
+          if (en.sol.focusKey === key) batalFokus(en); else fokusPlanet(en, key);
+        });
+        ui.chipsRow.appendChild(btn);
+      }
+      ui.chips.hidden = false;
     }
 
     // Target hilang: sembunyikan UI dan jeda animasi pada waktunya sekarang.
@@ -843,6 +914,41 @@
       const entries = [];
       let active = null;
 
+      const setKecepatan = (v) => {
+        if (!active) return;
+        const s = THREE.MathUtils.clamp(v, 0.01, 1.5);
+        active.mixer.timeScale = s;
+        ui.spdVal.textContent = 'Kecepatan ' + (+s.toFixed(2)) + '×';
+      };
+      const grip = $('sheet-grip');
+      let pDrag = null;
+      grip.addEventListener('pointerdown', (e) => {
+        grip.setPointerCapture(e.pointerId);
+        pDrag = {
+          x: e.clientX, y: e.clientY,
+          r: ui.sheet.getBoundingClientRect(),
+          x0: parseFloat(ui.sheet.style.getPropertyValue('--dx')) || 0,
+          y0: parseFloat(ui.sheet.style.getPropertyValue('--dy')) || 0
+        };
+      });
+      grip.addEventListener('pointermove', (e) => {
+        if (!pDrag) return;
+        const dx = THREE.MathUtils.clamp(e.clientX - pDrag.x, -pDrag.r.left, innerWidth - pDrag.r.right);
+        const dy = THREE.MathUtils.clamp(e.clientY - pDrag.y, -pDrag.r.top, innerHeight - pDrag.r.bottom);
+        ui.sheet.style.setProperty('--dx', (pDrag.x0 + dx) + 'px');
+        ui.sheet.style.setProperty('--dy', (pDrag.y0 + dy) + 'px');
+      });
+      const lepasPanel = () => { pDrag = null; };
+      grip.addEventListener('pointerup', lepasPanel);
+      grip.addEventListener('pointercancel', lepasPanel);
+      grip.addEventListener('dblclick', () => {
+        ui.sheet.style.removeProperty('--dx');
+        ui.sheet.style.removeProperty('--dy');
+      });
+
+      $('spd-dn').addEventListener('click', () => active && setKecepatan(active.mixer.timeScale * 0.7));
+      $('spd-up').addEventListener('click', () => active && setKecepatan(active.mixer.timeScale / 0.7));
+
       for (const [i, t] of targets.entries()) {
         setLoading('Memuat model 3D ' + (i + 1) + ' dari ' + total + '…');
 
@@ -863,6 +969,7 @@
         // Orang utan harus diam pada pose awal; animasi bawaan hanya berjalan setelah diketuk.
         const orangutan = t.id === 'save-orangutan' || t.index === 3;
         const mixer = new THREE.AnimationMixer(model);
+        mixer.timeScale = t.kecepatan ?? 1;
 
         const idleClip = (solar || t.ulangSaatDiklik || orangutan)
           ? null
@@ -967,7 +1074,9 @@
 
           if (en.sol) {
             mulaiTataSurya(en);
-            ui.hintTap.textContent = '👆 Ketuk planet untuk melihat nama dan memperbesar';
+            ui.speed.hidden = false;
+            setKecepatan(en.mixer.timeScale);
+            ui.hintTap.textContent = '👆 Ketuk planet untuk melihat informasinya';
           } else {
             ui.hintTap.textContent = '👆 Ketuk objek';
           }
@@ -1029,6 +1138,47 @@
       let pinchStart = 0;
       let scaleStart = 1;
 
+      // ---- geser model AR dengan satu jari ----
+      let drag = null;
+      const dragPlane = new THREE.Plane();
+      const dragN = new THREE.Vector3();
+      const dragP = new THREE.Vector3();
+      const dragA = new THREE.Vector3();
+
+      function titikPadaBidang(cx, cy) {
+        const r = dom.getBoundingClientRect();
+        ndc.x = ((cx - r.left) / r.width) * 2 - 1;
+        ndc.y = -((cy - r.top) / r.height) * 2 + 1;
+        raycaster.setFromCamera(ndc, camera);
+        if (!raycaster.ray.intersectPlane(dragPlane, dragA)) return null;
+        return active.anchor.group.worldToLocal(dragA);
+      }
+
+      function geserModel(e) {
+        if (!drag) {
+          if (!tapStart) return;
+          if (Math.hypot(e.clientX - tapStart.x, e.clientY - tapStart.y) < 15) return;
+          active.anchor.group.updateWorldMatrix(true, false);
+          active.holder.updateWorldMatrix(true, false);
+          dragN.set(0, 0, 1).transformDirection(active.anchor.group.matrixWorld);
+          active.holder.getWorldPosition(dragP);
+          dragPlane.setFromNormalAndCoplanarPoint(dragN, dragP);
+          const s = titikPadaBidang(tapStart.x, tapStart.y);
+          if (!s) return;
+          if (!active.posAwal) active.posAwal = active.holder.position.clone();
+          drag = { s: s.clone(), p: active.holder.position.clone() };
+          tapStart = null;
+        }
+        const n = titikPadaBidang(e.clientX, e.clientY);
+        if (!n) return;
+        active.holder.position.set(
+          THREE.MathUtils.clamp(drag.p.x + n.x - drag.s.x, -2, 2),
+          THREE.MathUtils.clamp(drag.p.y + n.y - drag.s.y, -2, 2),
+          drag.p.z
+        );
+        lastEvt = 'geser model';
+      }
+
       const debugOn = new URLSearchParams(location.search).has('debug');
       const dbg = document.createElement('div');
 
@@ -1057,7 +1207,35 @@
         return Math.hypot(a.x - b.x, a.y - b.y);
       };
 
+      // ---- suara: file audio (t.suara) atau, kalau tidak ada, suara bicara browser (t.ucapan) ----
+      let audioEl = null;
+
+      function ucapkan(t) {
+        if (!t.ucapan || !('speechSynthesis' in window)) return;
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(t.ucapan);
+        u.lang = t.bahasa || 'en-US';
+        u.rate = 0.9;
+        u.pitch = 0.9;
+        speechSynthesis.speak(u);
+      }
+
+      function mainkanSuara(t) {
+        if (t.suara) {
+          if (!audioEl || audioEl.dataset.src !== t.suara) {
+            audioEl = new Audio(t.suara);
+            audioEl.dataset.src = t.suara;
+          }
+          audioEl.currentTime = 0;
+          audioEl.play().catch(() => ucapkan(t));
+          return;
+        }
+        ucapkan(t);
+      }
+
       function mainkanAksi(en) {
+        mainkanSuara(en.t);
+
         if (en.tapLoop) {
           if (!en.aksi || en.aksi.isRunning()) {
             return;
@@ -1099,13 +1277,30 @@
       }
 
       // Ketuk pada target Tata Surya: mulai animasi (sekali) + pilih planet
-      function tapTataSurya(en, kena) {
+      function tapTataSurya(en, kena, ev) {
         const sol = en.sol;
         let key = null;
 
-        // Ketuk langsung mesh planet; tidak ada tombol/badge buatan di luar GLB.
-        const hits = raycaster.intersectObjects(sol.meshes, false);
-        if (hits.length) key = hits[0].object.userData.key;
+        // Planet sangat kecil di layar, jadi pilih planet terdekat dari titik
+        // ketukan (toleransi 48px), bukan hanya yang tepat terkena sinar.
+        const r = dom.getBoundingClientRect();
+        let terdekat = 48;
+        for (const b of sol.bodies.values()) {
+          if (b.key === 'sun') continue;
+          _focusBox.setFromObject(b.focusMesh).getCenter(_qv);
+          _qv.project(camera);
+          if (_qv.z > 1) continue;
+          const sx = (_qv.x * 0.5 + 0.5) * r.width + r.left;
+          const sy = (-_qv.y * 0.5 + 0.5) * r.height + r.top;
+          const d = Math.hypot(sx - ev.clientX, sy - ev.clientY);
+          if (d < terdekat) { terdekat = d; key = b.key; }
+        }
+
+        // Tidak ada planet dekat: coba kena mesh langsung (misalnya Matahari).
+        if (!key) {
+          const hits = raycaster.intersectObjects(sol.meshes, false);
+          if (hits.length) key = hits[0].object.userData.key;
+        }
 
         if (!sol.started && (kena || key)) {
           mulaiTataSurya(en);
@@ -1144,7 +1339,7 @@
         }
 
         if (active.sol) {
-          tapTataSurya(active, kena);
+          tapTataSurya(active, kena, e);
           return;
         }
 
@@ -1158,7 +1353,7 @@
       const abaikan = (e) =>
         e.target &&
         e.target.closest &&
-        e.target.closest('#sheet, #overlay, #chips');
+        e.target.closest('#sheet, #overlay, #chips, #speed');
 
       window.addEventListener('pointerdown', (e) => {
         if (abaikan(e)) return;
@@ -1178,6 +1373,7 @@
           lastEvt = 'sentuh 1 jari';
         } else {
           tapStart = null;
+          drag = null;
 
           if (pointers.size === 2 && active) {
             pinchStart = jarak();
@@ -1204,6 +1400,8 @@
 
           active.holder.scale.setScalar(s);
           lastEvt = 'cubit: ' + s.toFixed(2);
+        } else if (pointers.size === 1 && active) {
+          geserModel(e);
         }
       });
 
@@ -1232,6 +1430,7 @@
 
         if (pointers.size < 2) {
           pinchStart = 0;
+          drag = null;
         }
       };
 
@@ -1262,6 +1461,7 @@
         }
 
         active.holder.scale.setScalar(1);
+        if (active.posAwal) active.holder.position.copy(active.posAwal);
       });
 
       const clock = new THREE.Clock();

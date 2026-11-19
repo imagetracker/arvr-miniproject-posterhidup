@@ -3,28 +3,53 @@
   "targets": [
     {
       "index": 0,
-      "id": "solar-system",
-      "judul": "Tata Surya",
-      "deskripsi": "Visualisasi tata surya dalam bentuk 3D. Ketuk model untuk memulai animasi pergerakan planet.",
-      "tautan": "",
-      "model": "assets/models/solar_system_with_animation.glb",
-      "skala": 0.3,
-      "posisi": [0, 0, 0.3],
-      "rotasi": [0, 0, 0],
-      "klipAksi": "Take 001",
-      "ulangSaatDiklik": true
+  "id": "solar-system",
+  "jenis": "tatasurya",
+  "judul": "Tata Surya",
+  "deskripsi": "Visualisasi tata surya 3D. Ketuk planet atau pilih dari deretan tombol untuk melihat informasinya.",
+  "tautan": "",
+  "model": "assets/models/solar_system_with_animation.glb",
+  "posisi": [0, 0, 0.3],
+  "rotasi": [0, 0, 0],
+  "klipAksi": "Take 001",
+  "kecepatan": 0.05,
+  "lebarFit": 0.9,
+  "radiusFokus": 0.2,
+  "planet": [
+    {"key":"sun","name":"Matahari","type":"Bintang","badge":"","warna":"#f59e0b","description":"Bintang pusat tata surya. Gravitasinya menahan semua planet pada orbitnya, dan ia menyumbang sekitar 99,86% massa tata surya.","stats":[["Diameter","1.392.000 km"],["Suhu permukaan","± 5.500 °C"],["Usia","4,6 miliar thn"]]},
+    {"key":"mercury","name":"Merkurius","type":"Planet","badge":1,"warna":"#94a3b8","description":"Planet terkecil dan terdekat dari Matahari. Siangnya sangat panas, malamnya sangat dingin karena hampir tanpa atmosfer.","stats":[["Diameter","4.879 km"],["Jarak ke Matahari","58 juta km"],["Revolusi","88 hari"]]},
+    {"key":"venus","name":"Venus","type":"Planet","badge":2,"warna":"#fbbf24","description":"Planet terpanas, sekitar 465 °C, karena atmosfer tebal CO₂ yang memerangkap panas. Venus berotasi berlawanan arah dengan kebanyakan planet.","stats":[["Diameter","12.104 km"],["Jarak ke Matahari","108 juta km"],["Revolusi","225 hari"]]},
+    {"key":"earth","name":"Bumi","type":"Planet","badge":3,"warna":"#38bdf8","description":"Satu-satunya planet yang diketahui memiliki kehidupan. Sekitar 71% permukaannya tertutup air. Karena itu, menjaga hutan dan udara bersih itu penting.","stats":[["Diameter","12.742 km"],["Jarak ke Matahari","150 juta km"],["Revolusi","365,25 hari"]]},
+    {"key":"moon","name":"Bulan","type":"Satelit alami","badge":"","warna":"#cbd5e1","description":"Satu-satunya satelit alami Bumi. Tarikan gravitasinya menyebabkan pasang surut air laut.","stats":[["Diameter","3.474 km"],["Jarak ke Bumi","384.400 km"],["Orbit","27,3 hari"]]},
+    {"key":"mars","name":"Mars","type":"Planet","badge":4,"warna":"#ef4444","description":"Si Planet Merah. Warnanya berasal dari besi oksida (karat). Mars punya Olympus Mons, gunung berapi tertinggi di tata surya.","stats":[["Diameter","6.779 km"],["Jarak ke Matahari","228 juta km"],["Revolusi","687 hari"]]},
+    {"key":"jupiter","name":"Jupiter","type":"Planet","badge":5,"warna":"#fb923c","description":"Planet terbesar, cukup luas untuk memuat lebih dari 1.300 Bumi. Bintik Merah Besarnya adalah badai raksasa yang sudah berlangsung ratusan tahun.","stats":[["Diameter","139.820 km"],["Jarak ke Matahari","778 juta km"],["Revolusi","11,9 tahun"]]},
+    {"key":"saturn","name":"Saturnus","type":"Planet","badge":6,"warna":"#eab308","description":"Terkenal dengan cincinnya yang indah, tersusun dari es dan batuan. Massa jenisnya lebih kecil dari air, jadi secara teori ia akan mengapung.","stats":[["Diameter","116.460 km"],["Jarak ke Matahari","1,43 miliar km"],["Revolusi","29,5 tahun"]]},
+    {"key":"uranus","name":"Uranus","type":"Planet","badge":7,"warna":"#22d3ee","description":"Planet es raksasa yang berputar miring hampir 98°, seolah menggelinding mengelilingi Matahari. Warna biru kehijauannya berasal dari gas metana.","stats":[["Diameter","50.724 km"],["Jarak ke Matahari","2,87 miliar km"],["Revolusi","84 tahun"]]},
+    {"key":"neptune","name":"Neptunus","type":"Planet","badge":8,"warna":"#6366f1","description":"Planet terjauh dari Matahari, dengan angin tercepat di tata surya yang bisa lebih dari 2.000 km/jam.","stats":[["Diameter","49.244 km"],["Jarak ke Matahari","4,5 miliar km"],["Revolusi","165 tahun"]]},
+    {"key":"pluto","name":"Pluto","type":"Planet kerdil","badge":"","warna":"#a8a29e","description":"Dulu dianggap planet kesembilan, sejak 2006 digolongkan sebagai planet kerdil. Satu tahun di Pluto setara 248 tahun di Bumi.","stats":[["Diameter","2.377 km"],["Jarak ke Matahari","5,9 miliar km"],["Revolusi","248 tahun"]]}
+  ]
     },
     {
-       "index": 1,
-       "id": "save-orangutan",
-       "judul": "Save Orangutan – Let Them Breathe",
-       "deskripsi": "Lindungi orang utan dan habitatnya dari ancaman kebakaran hutan.",
-       "tautan": "",
-       "model": "assets/models/orang_utan_low_poly.glb",
-       "skala": 0.005,
-       "posisi": [0, 0, 0.3],
-       "rotasi": [0, 0, 0],
-       "klipAksi": "Animation"
+     "index": 1,
+      "id": "save-orangutan",
+      "judul": "Save Orangutan – Let Them Breathe",
+      "deskripsi": "Lindungi orang utan dan habitatnya dari ancaman kebakaran hutan.",
+      "tautan": "",
+      "model": "assets/models/orang_utan_low_poly.glb",
+      "skala": 0.005,
+      "posisi": [
+        0,
+        0,
+        0.3
+      ],
+      "rotasi": [
+        0,
+        0,
+        0
+      ],
+      "klipAksi": "Animation",
+      "ucapan": "No forest, no future",
+      "bahasa": "en-US"
     }
   ]
 }
