@@ -49,7 +49,22 @@
       ],
       "klipAksi": "Animation",
       "ucapan": "No forest, no future",
-      "bahasa": "en-US"
+      "bahasa": "en-US",
+      "warna": "#f97316",
+      "stats": [
+        [
+          "Status",
+          "Kritis (IUCN)"
+        ],
+        [
+          "Habitat",
+          "Hutan Sumatra & Kalimantan"
+        ],
+        [
+          "Ancaman",
+          "Karhutla & alih lahan"
+        ]
+      ]
     }
   ]
 }

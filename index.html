@@ -525,8 +525,14 @@
         ui.link.hidden = true;
       }
 
-      ui.stats.hidden = true;
-      ui.sheet.style.setProperty('--accent', '#3b82f6');
+
+     
+      ui.stats.innerHTML = (t.stats || [])
+       .map(([l, v]) => '<div><small>' + l + '</small><b>' + v + '</b></div>').join('');
+      ui.stats.hidden = !(t.stats || []).length;
+      ui.sheet.style.setProperty('--accent', t.warna || '#3b82f6');
+       ui.sheet.classList.add('show');
+       ui.btnInfo.hidden = !ui.sheet.classList.contains('tutup');
       ui.sheet.classList.add('show');
       ui.btnInfo.hidden = !ui.sheet.classList.contains('tutup');
     }
