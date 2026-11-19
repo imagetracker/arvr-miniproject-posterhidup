@@ -5,7 +5,7 @@ Mini project AR berbasis web: arahkan kamera ke poster, lalu model 3D muncul di 
 Ada dua target poster:
 
 Tata Surya: model 3D dengan animasi orbit. Ketuk planet untuk melihat informasinya.
-Save Orangutan – Let Them Breathe: model orang utan low-poly dengan pesan pelestarian hutan.
+Save The Orangutans: model orang utan low-poly dengan pesan pelestarian hutan.
 
 Dibangun dengan three.js 0.160 dan MindAR 1.2.5 (image tracking), keduanya dimuat lewat CDN.
 
@@ -24,7 +24,7 @@ Lewat HP: deploy ke GitHub Pages (otomatis HTTPS), lalu buka tautannya di HP.
 Tambahkan ?debug di akhir URL untuk menampilkan info debug di layar.
 Cara Menggunakan
 
-Aksi                                |            Hasil                       |
+|              Aksi                 |                  Hasil                 |
 | Arahkan kamera ke poster          | Model dan panel informasi muncul       |
 | Ketuk planet (Tata Surya)         | Zoom ke planet dan tampil datanya      |
 | Ketuk area kosong                 | Kembali ke tampilan tata surya penuh   |
@@ -65,5 +65,4 @@ Ukuran model besar (sekitar 11 MB total), sehingga muat pertama bisa lambat di j
 Data planet dibulatkan dan hanya untuk edukasi umum, bukan nilai presisi astronomi.
 
 Lisensi dan Atribusi
-
-Daftar lisensi dan pembuat model 3D dicatat di LICENSES.md. Pastikan atribusi kedua model (solar_system_with_animation.glb dan orang_utan_low_poly.glb) sudah tercantum sebelum proyek dipublikasikan.
+Daftar lisensi dan pembuat model 3D dicatat di LICENSES.md.
