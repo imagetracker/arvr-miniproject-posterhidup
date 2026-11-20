@@ -9,7 +9,7 @@ Legenda: ✅ berfungsi · ⚠️ berfungsi dengan catatan · ❌ tidak berfungsi
 | # | Perangkat                    | OS               | Browser        | Tanggal uji | Penguji                |
 |---|-----------                   |----              |---------       |-------------|---------               |
 | 1 | Vivo V50 Lite                | Android 16       | Chrome         | 17-11-2026  | Tajjana Maizlan        |
-| 2 | iphone 15                    | iOS _18_         | Safari         | _isi_       | _isi_                  |
+| 2 | iphone 15                    | iOS 18           | Safari, chrome | 18-11-2026  | Nurul Aisyah
 | 3 | Laptop Lenovo LOQ Essential  | Windows 11       | Chrome         | 18-11-2026  | Putri Hani Simanjuntak | 
 
 ## Hasil per Fitur
