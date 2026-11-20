@@ -19,7 +19,9 @@ python -m http.server 5500
 
 Buka http://localhost:5500/index.html, izinkan akses kamera, lalu arahkan kamera ke gambar target (gambar yang dipakai untuk membuat assets/targets/targets.mind).
 
-Lewat HP: deploy ke GitHub Pages (otomatis HTTPS), lalu buka tautannya di HP.
+Lewat HP: Proyek dapat dijalankan melalui GitHub Pages yang menyediakan akses HTTPS.
+Link Demo: https://imagetracker.github.io/arvr-miniproject-posterhidup/
+Buka tautan tersebut melalui browser HP, izinkan akses kamera, lalu arahkan kamera ke gambar target untuk memulai pengalaman Augmented Reality (AR).
 
 Tambahkan ?debug di akhir URL untuk menampilkan info debug di layar.
 Cara Menggunakan
